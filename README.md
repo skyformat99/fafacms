@@ -82,3 +82,7 @@ sudo ./install.sh
 支付宝支持:
 
 ![](/doc/support/alipay.png)
+
+## CopyRight
+
+All right reserved. Attribution-NonCommercial-NoDerivatives 4.0 International.You can use it for education only but can't make profits for any companies and individuals!

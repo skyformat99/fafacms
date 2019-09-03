@@ -1,0 +1,45 @@
+{
+  "DefaultConfig": {
+    "WebPort": ":8080",
+    "StorageOss": false,
+    "StoragePath": "/root/fafacms/storage",
+    "LogDebug": true,
+    "LogPath": "/root/fafacms/log/fafacms_log.log",
+    "CloseRegister": false
+  },
+  "OssConfig": {
+    "Endpoint": "oss-cn-qingdao.aliyuncs.com",
+    "BucketName": "syoss",
+    "AccessKeyId": "",
+    "AccessKeySecret": ""
+  },
+  "DbConfig": {
+    "DriverName": "mysql",
+    "Name": "fafa",
+    "Host": "172.17.0.1",
+    "User": "root",
+    "Pass": "123456789",
+    "Port": "3306",
+    "MaxIdleConns": 20,
+    "MaxOpenConns": 20,
+    "DebugToFile": true,
+    "DebugToFileName": "/root/fafacms/log/fafacms_db.log",
+    "Debug": true
+  },
+  "Email": {
+    "Host": "smtp-mail.outlook.com",
+    "Port": 587,
+    "Email": "gdccmcm14@live.com",
+    "Password": "",
+    "Subject": "FaFa CMS Code",
+    "Body": "%s Code is <br/> <p style='text-align:center'>%s</p> <br/>Valid in 5 minute."
+  },
+  "SessionConfig": {
+    "RedisHost": "172.17.0.1:6379",
+    "RedisMaxIdle": 64,
+    "RedisMaxActive": 0,
+    "RedisIdleTimeout": 120,
+    "RedisDB": 0,
+    "RedisPass": "123456789"
+  }
+}

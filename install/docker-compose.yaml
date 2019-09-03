@@ -1,0 +1,55 @@
+version: '2'
+services:
+  fafaredis:
+    container_name: "fafaredis"
+    restart: always
+    image: redis:5.0.5
+    ports:
+      - "6379:6379"
+    volumes:
+      - /data/mydocker/redis/data:/data
+      - /data/mydocker/redis/conf:/usr/local/etc/redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+  fafamysql:
+    container_name: "fafamysql"
+    restart: always
+    image: mysql:5.7.27
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456789
+    volumes:
+      - /data/mydocker/mysql/data:/var/lib/mysql
+      - /data/mydocker/mysql/conf:/etc/mysql/conf.d
+  fafaphpmyadmin:
+    restart: always
+    image: phpmyadmin/phpmyadmin:edge-4.9
+    container_name: fafaphpmyadmin
+    ports:
+      - "8000:80"
+#    environment:
+#      - PMA_ARBITRARY=1
+#      - PMA_HOSTS=172.17.0.1,host.docker.internal
+#      - PMA_VERBOSES=linux-mysql,mac-mysql
+#      - PMA_USER=root
+#      - PMA_PASSWORD=123456789
+    depends_on:
+      - fafamysql
+    links:
+      - fafamysql:db
+  fafacms:
+    container_name: "fafacms"
+    restart: always
+    depends_on:
+      - fafaredis
+      - fafamysql
+    image: hunterhug/fafacms:latest
+    ports:
+      - "8080:8080"
+    environment:
+      RUN_OPTS: "-config=/root/fafacms/config.json -history_record=true -init_db=true"
+    volumes:
+      - /data/mydocker/fafacms/config.json:/root/fafacms/config.json
+      - /data/mydocker/fafacms/storage:/root/fafacms/storage
+      - /data/mydocker/fafacms/storage_x:/root/fafacms/storage_x
+      - /data/mydocker/fafacms/log:/root/fafacms/log

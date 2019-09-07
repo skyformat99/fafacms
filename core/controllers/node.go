@@ -714,7 +714,7 @@ func TakeNode(c *gin.Context) {
 
 	if !exist {
 		flog.Log.Errorf("Node err:%s", "content node not found")
-		resp.Error = Error(ContentNodeNotFound, err.Error())
+		resp.Error = Error(ContentNodeNotFound, "")
 		return
 	}
 
@@ -740,7 +740,7 @@ func TakeNode(c *gin.Context) {
 	// 是顶层且需要列出儿子
 	if f.Level == 0 && req.ListSon {
 		ns := make([]model.ContentNode, 0)
-		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).Find(ns)
+		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).Find(&	ns)
 		if err != nil {
 			flog.Log.Errorf("Node err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())

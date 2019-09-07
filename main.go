@@ -51,6 +51,9 @@ var (
 
 	// 是否内容刷新进历史表进行保存
 	historyRecord bool
+
+	// 与UTC的时区偏移量
+	timeZone int64
 )
 
 // 初始化时解析命令行，辅助程序
@@ -58,13 +61,13 @@ var (
 func init() {
 	// 默认读取本路径下 ./config.json 配置
 	flag.StringVar(&configFile, "config", "./config.json", "config file")
+	flag.Int64Var(&timeZone, "time_zone", 8, "time zone offset the utc")
 
 	// 正式部署时，请全部设置为 false
 	flag.BoolVar(&createTable, "init_db", true, "create db table")
 	flag.BoolVar(&mailDebug, "email_debug", false, "Email debug")
 	flag.BoolVar(&canSkipAuth, "auth_skip_debug", false, "Auth skip debug")
 	flag.BoolVar(&historyRecord, "history_record", false, "Content history record")
-
 	flag.Parse()
 }
 
@@ -113,6 +116,7 @@ func main() {
 	// 将调试参数跨包注入
 	mail.Debug = mailDebug
 	controllers.AuthDebug = canSkipAuth
+	controllers.TimeZone = timeZone
 	model.HistoryRecord = historyRecord
 
 	var err error

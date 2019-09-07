@@ -10,9 +10,12 @@ import (
 	"time"
 )
 
+var TimeZone int64 = 0
+
 func GetSecond2DateTimes(secord int64) string {
+	secord = secord + 3600*TimeZone
 	tm := time.Unix(secord, 0)
-	return tm.Format("2006-01-02 15:04:05")
+	return tm.UTC().Format("2006-01-02 15:04:05")
 
 }
 
@@ -139,7 +142,7 @@ type Node struct {
 	Level         int    `json:"level"`
 	Status        int    `json:"status"`
 	ParentNodeId  int    `json:"parent_node_id"`
-	Son           []Node
+	Son           []Node `json:"son,omitempty"`
 }
 
 type NodesInfoRequest struct {

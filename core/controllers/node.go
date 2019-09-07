@@ -204,7 +204,7 @@ func UpdateSeoOfNode(c *gin.Context) {
 		}
 		if exist {
 			// SEO存在了，报错
-			flog.Log.Errorf("UpdateSeoOfNode err: %s", err.Error())
+			flog.Log.Errorf("UpdateSeoOfNode err: %s", "seo been used")
 			resp.Error = Error(ContentNodeSeoAlreadyBeUsed, "")
 			return
 		}
@@ -902,9 +902,9 @@ func ListNodeHelper(c *gin.Context, userId int) {
 	resp.Data = respResult
 }
 
-// 将Y放在X节点的上面
-// 所以想把一个节点拖到父节点的最底层是做不到的，需要拖两次
-// 上面拖两次的问题可以解决了，就是YID为空时，直接把他拖到最后
+// 将X节点放在Y节点的下面
+// 所以想把一个X节点拖到父节点的最顶层是做不到的，需要拖两次
+// 上面拖两次的问题可以解决了，就是YID为空时，直接把他拖到最前面
 type SortNodeRequest struct {
 	XID int `json:"xid" validate:"required"`
 	YID int `json:"yid"`
@@ -961,7 +961,7 @@ func SortNode(c *gin.Context) {
 		return
 	}
 
-	// x节点要拉到最下面
+	// x节点要拉到最顶层
 	if req.YID == 0 {
 		session := model.FafaRdb.Client.NewSession()
 		defer session.Close()
@@ -973,7 +973,10 @@ func SortNode(c *gin.Context) {
 			return
 		}
 
-		// 比x小的都往上走，因为x要做垫底小弟
+		// 比x小的都往下走，因为x要做大哥
+		//  --- a  0		---
+		//  --- x  1   ==》	--- a x 1
+		//  --- b  2		--- b 2
 		_, err = session.Exec("update fafacms_content_node SET sort_num=sort_num+1 where sort_num < ? and user_id = ? and parent_node_id = ?", x.SortNum, uu.Id, x.ParentNodeId)
 		if err != nil {
 			session.Rollback()
@@ -982,7 +985,7 @@ func SortNode(c *gin.Context) {
 			return
 		}
 
-		// x做小弟
+		// x做大哥了
 		_, err = session.Exec("update fafacms_content_node SET sort_num=0 where user_id = ? and parent_node_id = ? and id = ?", uu.Id, x.ParentNodeId, x.Id)
 		if err != nil {
 			session.Rollback()
@@ -1058,6 +1061,37 @@ func SortNode(c *gin.Context) {
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
+
+
+	// 先把x假装删掉，比x大的都-1，依次顶上x的位置，把大于y排序的节点都+1，腾出位置给x
+	// 同一级
+	// y>x  y=5 x=2
+	//   --- a	0		--- a 0			--- a 0
+	//   --- b  1 ==>	--- b 1 	==>	--- b 1
+	//   --- x	2		--- xc 2		--- xc 2
+	//   --- c	3		--- d 3			--- d 3
+	//   --- d  4		--- y 4			--- y 4
+	//   --- y	5		--- e 5			---			==> x=5
+	//   --- e	6		---  			--- e 6
+
+	// y<x  y=2 x=5
+	//   --- a	0		--- a 0			--- a 0
+	//   --- b  1 ==>	--- b 1 	==>	--- b 1
+	//   --- y	2		--- y 2			--- y 2		==> x=3
+	//   --- c	3		--- c 3			--- c 4
+	//   --- d  4		--- d 4			--- d 5
+	//   --- x	5		--- xe 5		---	xe 6
+	//   --- e	6		---
+
+	// 不同级
+	// y=1
+	//   --- a	0		--- a 0				--- a 0
+	//   --- b  1 	==>	--- b 1 		==>	--- b 1
+	//   	--- c 0			--- c 0				--- c 0
+	//   	--- y 1			--- y 1				--- y 1		==> x=2
+	//   	--- d 2			--- d 2				--- d 3
+	//   --- x	2		--- xe 2			---	xe 2
+	//   --- e	3
 
 	// x顶上, 如果同一级的，且y>x
 	if x.ParentNodeId == y.ParentNodeId && y.SortNum > x.SortNum {

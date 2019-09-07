@@ -50,6 +50,11 @@ sudo ./install.sh
 
 ## Update
 
+### 201909
+1. 支持传入flag `-time_zone`参数设置时区，默认为东八区北京时间。
+2. 修复某些空指针异常，补充节点内容相关API文档，前端优化。
+3. 自动化部署[脚本](install/README.md)数据库升级：`mysql:5.7.27`，`redis:5.0.5`，管理工具集成：`phpmyadmin:edge-4.9`。
+
 ### 201908
 
 1. 可选择不将内容记录进历史。

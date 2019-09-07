@@ -17,7 +17,7 @@ chmod 777 install.sh
 sudo ./install.sh
 ```
 
-主要集成了`mysql5.7.27`，`phpmyadmin:edge-4.9`和`redis:5.0.5`，端口分别为`3306`，`8000`，`6379`，
+主要集成了`mysql:5.7.27`，`phpmyadmin:edge-4.9`和`redis:5.0.5`，端口分别为`3306`，`8000`，`6379`，
 
 `MYSQL`账号密码：`root/123456789`,`Redis`密码：`123456789`，打开`IP:8000`登录数据库进行查看。
 

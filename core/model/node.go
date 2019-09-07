@@ -22,9 +22,8 @@ type ContentNode struct {
 	SortNum      int    `json:"sort_num"` //  排序，数字越大排越后
 }
 
-// 内容节点排序专用，内容节点按更新时间降序，接着创建时间
-// https://blog.csdn.net/weixin_33704591/article/details/86892363
-var ContentNodeSortName = []string{"=id", "-sort_num", "-create_time", "-update_time", "+status", "=seo"}
+// 内容节点排序专用
+var ContentNodeSortName = []string{"=id", "+sort_num", "-create_time", "-update_time", "+status", "=seo"}
 
 // 检查节点数量
 func (n *ContentNode) CountNodeNum() (int, error) {
@@ -32,7 +31,7 @@ func (n *ContentNode) CountNodeNum() (int, error) {
 		return 0, errors.New("where is empty")
 	}
 
-	// 创建时，要在同一层排序最大
+	// 创建时，要在同一层排序最大，这样排在最后
 	num, err := FafaRdb.Client.Table(n).Where("user_id=?", n.UserId).Where("parent_node_id=?", n.ParentNodeId).Count()
 	return int(num), err
 }
@@ -222,7 +221,7 @@ func (n *ContentNode) UpdateParent(beforeParentNode int) error {
 
 	// 更新节点
 	// 事务怕本ORM混淆，所以直接使用原生
-	// 每次更改节点，他都会成为这一层最靓丽排得最前面的仔
+	// 每次更改节点，他都会成为这一层最靓丽排得最前面的仔，不是啦，成为排最后的仔，排序越大越往后。
 	_, err = session.Exec("update fafacms_content_node SET sort_num=?, update_time=?, level=?, parent_node_id=? where id = ? and user_id = ?", n.SortNum, n.UpdateTime, n.Level, n.ParentNodeId, n.Id, n.UserId)
 	if err != nil {
 		session.Rollback()

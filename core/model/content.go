@@ -33,7 +33,7 @@ type Content struct {
 	SortNum      int64  `json:"sort_num"`
 }
 
-var ContentSortName = []string{"=id", "-user_id", "-top", `-sort_num`, "-create_time", "-update_time", "-views", "=version", "+status", "=seo"}
+var ContentSortName = []string{"=id", "-user_id", "-top", `+sort_num`, "-create_time", "-update_time", "-views", "=version", "+status", "=seo"}
 
 // 内容历史表
 type ContentHistory struct {

@@ -109,10 +109,6 @@
 			"Rev": "c22e1f7ee6cbea18714b18b205a1a7425ad86d85"
 		},
 		{
-			"ImportPath": "github.com/hunterhug/parrot/util",
-			"Rev": "6af97adffe79ea0ed0fca21d79b7fdf2cd9cd912"
-		},
-		{
 			"ImportPath": "github.com/json-iterator/go",
 			"Comment": "v1.1.6",
 			"Rev": "0ff49de124c6f76f8494e194af75bde0f1a49a29"

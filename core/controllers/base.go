@@ -170,6 +170,7 @@ type PageHelp struct {
 	Pages int `json:"total_pages"` // set by yourself outside
 }
 
+// page build helper
 func (page *PageHelp) build(s *xorm.Session, sort []string, base []string) {
 	Build(s, sort, base)
 
@@ -177,8 +178,12 @@ func (page *PageHelp) build(s *xorm.Session, sort []string, base []string) {
 		page.Page = 1
 	}
 
-	if page.Limit <= 0 || page.Limit > 20 {
+	if page.Limit <= 0 {
 		page.Limit = 20
+	}
+
+	if page.Limit > 100 {
+		page.Limit = 100
 	}
 	s.Limit(page.Limit, (page.Page-1)*page.Limit)
 }

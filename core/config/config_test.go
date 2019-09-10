@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+
+// gen a config json
 func TestJsonOutConfig(t *testing.T) {
 	c := Config{
 	}

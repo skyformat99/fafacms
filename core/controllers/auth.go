@@ -8,15 +8,18 @@ import (
 	"github.com/hunterhug/fafacms/core/session"
 )
 
+// every API which need auth should take a HTTP header `Auth`
 const AuthHeader = "Auth"
 
 var (
+	// if you want skip auth you can set it true
 	AuthDebug = false
-	AdminUrl  map[string]int
+
+	// those api will be check resource
+	AdminUrl map[string]int
 )
 
-// auth filter
-// 授权过滤器
+// api access auth filter
 var AuthFilter = func(c *gin.Context) {
 	resp := new(Resp)
 	defer func() {
@@ -47,19 +50,19 @@ var AuthFilter = func(c *gin.Context) {
 		return
 	}
 
-	// 超级管理员skr
+	// admin user is skr
 	if nowUser.Name == "admin" {
 		return
 	}
 
-	// 未激活不能进入
+	// not active will be refuse
 	if nowUser.Status == 0 {
 		flog.Log.Errorf("filter err: not active")
 		resp.Error = Error(UserNotActivate, "not active")
 		return
 	}
 
-	// 被加入了黑名单
+	// black user will be refuse
 	if nowUser.Status == 2 {
 		flog.Log.Errorf("filter err: black lock, contact admin")
 		resp.Error = Error(UserIsInBlack, "black lock, contact admin")
@@ -95,27 +98,29 @@ var AuthFilter = func(c *gin.Context) {
 		return
 	}
 
+	// resource not found in group will be refuse
 	if !exist {
-		// not found
 		flog.Log.Errorf("filter err:%s", "resource not allow")
 		resp.Error = Error(UserAuthPermit, "resource not allow")
 		return
 	}
 }
 
-// 获取用户信息，存于Session中的
+// get the info of user，will save in redis Session
 func GetUserSession(c *gin.Context) (*model.User, error) {
-	// 请求链只需查询一次用户信息
+	// get the info from context if exist
 	if v, exist := c.Get("everAuth"); exist {
 		return v.(*model.User), nil
 	}
-	// 检查并拉出用户信息
+
+	// get token from HTTP header and check if it is exist
 	token := c.GetHeader(AuthHeader)
 	user, err := session.FafaSessionMgr.CheckToken(token)
 	if err != nil {
 		return nil, err
 	}
 
+	// set the info into context
 	c.Set("everAuth", user)
 	return user, nil
 }
@@ -125,13 +130,14 @@ func SetUserSession(user *model.User) (string, error) {
 		return "", errors.New("user nil")
 	}
 
-	// 只允许单点登录
+	// single login
+	// we only allow one token exist, other token will be delete.
 	session.FafaSessionMgr.DeleteUserToken(user.Id)
 	return session.FafaSessionMgr.SetToken(user, 24*3600*7)
 }
 
 func DeleteUserSession(c *gin.Context) error {
-	token := c.GetHeader("Auth")
+	token := c.GetHeader(AuthHeader)
 	err := session.FafaSessionMgr.DeleteToken(token)
 	return err
 }
@@ -142,7 +148,7 @@ func DeleteUserAllSession(id int) error {
 }
 
 func RefreshUserSession(c *gin.Context) error {
-	token := c.GetHeader("Auth")
+	token := c.GetHeader(AuthHeader)
 	err := session.FafaSessionMgr.RefreshToken(token)
 	return err
 }

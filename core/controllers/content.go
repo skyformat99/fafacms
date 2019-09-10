@@ -8,17 +8,16 @@ import (
 	"math"
 )
 
-// 创建内容
 type CreateContentRequest struct {
-	Seo          string `json:"seo" validate:"omitempty,alphanumunicode"` // 内容应该有个好听的标志
-	Title        string `json:"title" validate:"required"`                // 必须有标题吧
-	Status       int    `json:"status" validate:"oneof=0 1"`              // 隐藏内容，1就是隐藏
-	Top          int    `json:"top" validate:"oneof=0 1"`                 // 置顶，1就是置顶
-	Describe     string `json:"describe" validate:"omitempty"`            // 正文
-	ImagePath    string `json:"image_path" validate:"omitempty"`          // 内容背景图
-	NodeId       int    `json:"node_id"`                                  // 内容所属节点，可以没有节点
-	Password     string `json:"password"`                                 // 如果非空表示需要密码
-	CloseComment int    `json:"close_comment" validate:"oneof=0 1 2"`     // 评论设置，0关闭评论，1打开评论需要审核，2打开评论不需要审核
+	Seo          string `json:"seo" validate:"omitempty,alphanumunicode"` // unique mark in user's content
+	Title        string `json:"title" validate:"required"`                // content's title
+	Status       int    `json:"status" validate:"oneof=0 1"`              // 1 stand for content hide in front end, 0 show.
+	Top          int    `json:"top" validate:"oneof=0 1"`                 // 1 stand for let content on the top
+	Describe     string `json:"describe" validate:"omitempty"`            // content's body
+	ImagePath    string `json:"image_path" validate:"omitempty"`          // picture
+	NodeId       int    `json:"node_id"`                                  // node
+	Password     string `json:"password"`                                 // if not empty will need a password in front end
+	CloseComment int    `json:"close_comment" validate:"oneof=0 1 2"`     // 0 stand for close comment, 1 can comment but should review, 2 can comment not need review
 }
 
 func CreateContent(c *gin.Context) {
@@ -127,7 +126,7 @@ func CreateContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 更新内容SEO
+// update SEO
 type UpdateSeoOfContentRequest struct {
 	Id  int    `json:"id" validate:"required"`
 	Seo string `json:"seo" validate:"required,alphanumunicode"`
@@ -203,7 +202,7 @@ func UpdateSeoOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 更新内容图片
+// update the picture
 type UpdateImageOfContentRequest struct {
 	Id        int    `json:"id" validate:"required"`
 	ImagePath string `json:"image_path" validate:"required"`
@@ -282,7 +281,7 @@ func UpdateImageOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 管理员更新内容状态
+// admin user update the status of content, 0 normal, 1 hide，2 ban, 3 rubbish
 type UpdateStatusOfContentAdminRequest struct {
 	Id     int `json:"id" validate:"required"`
 	Status int `json:"status" validate:"oneof=0 1 2 3"`
@@ -337,7 +336,7 @@ func UpdateStatusOfContentAdmin(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 更新内容状态
+// user update the status of content, 0 normal, 1 hide
 type UpdateStatusOfContentRequest struct {
 	Id     int `json:"id" validate:"required"`
 	Status int `json:"status" validate:"oneof=0 1"`
@@ -413,7 +412,7 @@ func UpdateStatusOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 更新内容的节点
+// update the node of content
 type UpdateNodesOfContentRequest struct {
 	Id     int `json:"id" validate:"required"`
 	NodeId int `json:"node_id" validate:"required"`
@@ -483,7 +482,6 @@ func UpdateNodeOfContent(c *gin.Context) {
 			return
 		}
 
-		// SEO变了，也要带上
 		content.NodeSeo = contentNode.Seo
 		content.SortNum = contentBefore.SortNum
 		err = content.UpdateNode(contentBefore.NodeId)
@@ -496,7 +494,7 @@ func UpdateNodeOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 更新内容置顶
+// update the top of content
 type UpdateTopOfContentRequest struct {
 	Id  int `json:"id" validate:"required"`
 	Top int `json:"top" validate:"oneof=0 1"`
@@ -560,7 +558,7 @@ func UpdateTopOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 更新内容置顶
+// update the password of content, if password empty will not need password in front end
 type UpdatePasswordOfContentRequest struct {
 	Id       int    `json:"id" validate:"required"`
 	Password string `json:"password"`
@@ -624,7 +622,7 @@ func UpdatePasswordOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 更新内容标题和具体内容
+// update the body and title of content
 type UpdateInfoOfContentRequest struct {
 	Id       int    `json:"id" validate:"required"`
 	Title    string `json:"title" validate:"required"`
@@ -678,9 +676,7 @@ func UpdateInfoOfContent(c *gin.Context) {
 	content.Id = req.Id
 	content.UserId = uu.Id
 
-	//  如果内容更新
 	if contentBefore.PreDescribe != req.Describe || contentBefore.PreTitle != req.Title {
-		// 一旦更新就这样
 		content.Describe = req.Describe
 		content.Title = req.Title
 		err = content.UpdateDescribeAndHistory()
@@ -693,14 +689,15 @@ func UpdateInfoOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 将Y放在X的上面
-// 内容相对节点简单点，没有层次
+// put Y on top of X
+// can drag sort
 type SortContentRequest struct {
 	XID int `json:"xid" validate:"required"`
 	YID int `json:"yid"`
 }
 
-//  拖曳排序超级函数
+// sort the content in a skr way
+// sort_num more small, the more forward the content is
 func SortContent(c *gin.Context) {
 	resp := new(Resp)
 	req := new(SortContentRequest)
@@ -750,7 +747,7 @@ func SortContent(c *gin.Context) {
 		return
 	}
 
-	// x节点要拉到最下面
+	// x will be set on the top inside it's level
 	if req.YID == 0 {
 		session := model.FafaRdb.Client.NewSession()
 		defer session.Close()
@@ -762,7 +759,7 @@ func SortContent(c *gin.Context) {
 			return
 		}
 
-		// 比x小的都往上走，因为x要做垫底小弟
+		// contents sort_num small than x will be add 1, because x is the top.
 		_, err = session.Exec("update fafacms_content SET sort_num=sort_num+1 where sort_num < ? and user_id = ? and node_id = ?", x.SortNum, uu.Id, x.NodeId)
 		if err != nil {
 			session.Rollback()
@@ -771,7 +768,7 @@ func SortContent(c *gin.Context) {
 			return
 		}
 
-		// x做小弟
+		// x now is the top, it's sort_num is 0
 		_, err = session.Exec("update fafacms_content SET sort_num=0 where user_id = ? and node_id = ? and id = ?", uu.Id, x.NodeId, x.Id)
 		if err != nil {
 			session.Rollback()

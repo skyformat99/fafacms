@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	FafaConfig     *Config
+	//  global config
+	FafaConfig *Config
 )
 
 type Config struct {

@@ -15,7 +15,7 @@ func CreateTable(tables []interface{}) {
 			continue
 		}
 		if !ok {
-			// 字符改变
+			//  change the Charset
 			sess := FafaRdb.Client.NewSession()
 			sess.Charset("utf8mb4")
 			err = sess.CreateTable(table)

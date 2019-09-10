@@ -63,7 +63,7 @@ chmod 777 install.sh
 sudo ./install.sh
 ```
 
-Account/password：admin/admin, url: http://IP:8080.
+Account/Password：`admin/admin`, url: `http://IP:8080`.
 
 ### Backend deployment(normal)
 
@@ -86,31 +86,31 @@ description of`config.json`:
 ```
 {
   "DefaultConfig": {
-    "WebPort": ":8080", 				    	# Port for project(optional)
-    "StoragePath": "./data/storage",  # Path for file saving(optional)
-    "LogPath": "./data/log/fafacms_log.log", 	# Log saving path(optional)
-    "LogDebug": true   					        # Debug(default)
+    "WebPort": ":8080",                         # Port for project(optional)
+    "StoragePath": "./data/storage",            # Path for file saving(optional)
+    "LogPath": "./data/log/fafacms_log.log",    # Log saving path(optional)
+    "LogDebug": true                            # Debug(default)
   },
   "DbConfig": {
-    "DriverName": "mysql",  	# Relational DB driver(default)
-    "Name": "fafa", 					# DB name(optional)
-    "Host": "127.0.0.1", 			# DB host(optional)
-    "User": "root", 					# DB user(optional)
-    "Pass": "123456789", 			# DB password(optional)
-    "Port": "3306", 					# DB port(optional)
-    "MaxIdleConns": 20, 			# Max Idle connections(default)
-    "MaxOpenConns": 20, 			# Max Idle connections(default)
-    "DebugToFile": true, 			# Debug output files(default)
+    "DriverName": "mysql",          # Relational DB driver(default)
+    "Name": "fafa",                 # DB name(optional)
+    "Host": "127.0.0.1",            # DB host(optional)
+    "User": "root",                 # DB user(optional)
+    "Pass": "123456789",            # DB password(optional)
+    "Port": "3306",                 # DB port(optional)
+    "MaxIdleConns": 20,             # Max Idle connections(default)
+    "MaxOpenConns": 20,             # Max Idle connections(default)
+    "DebugToFile": true,            # Debug output files(default)
     "DebugToFileName": "./data/log/fafacms_db.log", # SQL output file path(default)
-    "Debug": true 										# sql Debug(default)
+    "Debug": true                                   # sql Debug(default)
   },
   "SessionConfig": {
-    "RedisHost": "127.0.0.1:6379", 		# RedisHost(optional)
-    "RedisMaxIdle": 64, 							# (default)
-    "RedisMaxActive": 0, 							# (default)
-    "RedisIdleTimeout": 120, 					# (default)
-    "RedisDB": 0, 										# Redis connect database(default)
-    "RedisPass": "123456789"   				# Redis password(optional, optional)
+    "RedisHost": "127.0.0.1:6379",  # RedisHost(optional)
+    "RedisMaxIdle": 64,             # (default)
+    "RedisMaxActive": 0,            # (default)
+    "RedisIdleTimeout": 120,        # (default)
+    "RedisDB": 0,                   # Redis connect database(default)
+    "RedisPass": "123456789"        # Redis password(optional, optional)
   }
 }
 ```

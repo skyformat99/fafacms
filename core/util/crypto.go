@@ -28,10 +28,6 @@ func Strtomd5(s string) string {
 	return rs
 }
 
-func Md5(str string) string {
-	return Strtomd5(str)
-}
-
 // 字符串base64加密
 func Base64E(urlstring string) string {
 	str := []byte(urlstring)

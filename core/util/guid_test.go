@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/hunterhug/go_image"
-	"github.com/hunterhug/parrot/util"
 	"testing"
 )
 
@@ -14,21 +13,21 @@ func TestListFile(t *testing.T) {
 }
 
 func TestMd5(t *testing.T) {
-	raw, err := util.ReadfromFile("./timg_x.jpeg")
+	raw, err := ReadfromFile("./timg_x.jpeg")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 	fmt.Println(Md5(raw))
 
-	raw, err = util.ReadfromFile("./timg.jpeg")
+	raw, err = ReadfromFile("./timg.jpeg")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 	fmt.Println(Md5(raw))
 
-	raw, err = util.ReadfromFile("./timg.jpeg")
+	raw, err = ReadfromFile("./timg.jpeg")
 	if err != nil {
 		fmt.Println(err.Error())
 		return

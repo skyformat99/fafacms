@@ -5,7 +5,7 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/hunterhug/fafacms/core/flog"
 	"github.com/hunterhug/fafacms/core/model"
-	"github.com/hunterhug/parrot/util"
+	"github.com/hunterhug/fafacms/core/util"
 	"math"
 	"time"
 )

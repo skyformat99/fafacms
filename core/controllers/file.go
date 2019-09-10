@@ -9,7 +9,6 @@ import (
 	"github.com/hunterhug/fafacms/core/model"
 	"github.com/hunterhug/fafacms/core/util/oss"
 	"github.com/hunterhug/go_image"
-	"github.com/hunterhug/parrot/util"
 	"io/ioutil"
 	"math"
 	"path/filepath"
@@ -92,8 +91,8 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	fileSuffix := util.GetFileSuffix(h.Filename)
-	if !util.InArray(fileAllowArray, fileSuffix) {
+	fileSuffix := myutil.GetFileSuffix(h.Filename)
+	if !myutil.InArray(fileAllowArray, fileSuffix) {
 		Log.Errorf("upload err: file suffix: %s not permit", fileSuffix)
 		resp.Error = Error(UploadFileTypeNotPermit, fmt.Sprintf("file suffix: %s not permit", fileSuffix))
 		return
@@ -161,14 +160,14 @@ func UploadFile(c *gin.Context) {
 		// 本地存储模式
 		if config.FafaConfig.DefaultConfig.StorageOss != true {
 			// 磁盘模式
-			err := util.MakeDir(fileDir)
+			err := myutil.MakeDir(fileDir)
 			if err != nil {
 				Log.Errorf("upload err:%s", err.Error())
 				resp.Error = Error(UploadFileError, err.Error())
 				return
 			}
 
-			err = util.SaveToFile(fileAbName, raw)
+			err = myutil.SaveToFile(fileAbName, raw)
 			if err != nil {
 				Log.Errorf("upload err:%s", err.Error())
 				resp.Error = Error(UploadFileError, err.Error())
@@ -191,7 +190,7 @@ func UploadFile(c *gin.Context) {
 		p.UrlHashCode, _ = myutil.Sha256([]byte(p.Url))
 
 		// 如果是图片进行裁剪
-		if util.InArray(scaleType, fileSuffix) {
+		if myutil.InArray(scaleType, fileSuffix) {
 			p.IsPicture = 1
 
 			// 本地存储模式，裁剪图静态路径为  /storage_x
@@ -200,7 +199,7 @@ func UploadFile(c *gin.Context) {
 				fileScaleAbName := filepath.Join(fileScaleDir, fileName)
 
 				// 裁剪
-				err = util.MakeDir(fileScaleDir)
+				err = myutil.MakeDir(fileScaleDir)
 				if err != nil {
 					Log.Errorf("upload err:%s", err.Error())
 					resp.Error = Error(UploadFileError, err.Error())

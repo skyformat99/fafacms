@@ -2,7 +2,6 @@
 package log
 
 // Thanks for sunteng!
-// import "github.com/hunterhug/parrot/log"
 // var jsconf = `
 // {
 // 	"Appenders":{

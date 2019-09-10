@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"github.com/hunterhug/parrot/log/golog"
+	"github.com/hunterhug/fafacms/core/util/log/golog"
 	"os"
 	"path"
 	"strings"

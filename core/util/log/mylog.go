@@ -3,7 +3,7 @@
 */
 package log
 
-import "github.com/hunterhug/parrot/util"
+import "github.com/hunterhug/fafacms/core/util"
 
 func New(filename string) {
 	logsconf, err := util.ReadfromFile(filename)

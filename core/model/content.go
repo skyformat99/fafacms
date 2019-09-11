@@ -107,31 +107,34 @@ func (c *Content) UpdateDescribeAndHistory() error {
 	session := FafaRdb.Client.NewSession()
 	defer session.Close()
 
-	history := new(ContentHistory)
-	history.NodeId = c.NodeId
-	history.CreateTime = time.Now().Unix()
-	// 之前的内容要刷进历史表
-	history.Title = c.PreTitle
-	history.Describe = c.PreDescribe
-	history.ContentId = c.Id
+	var err error
+	if HistoryRecord {
+		history := new(ContentHistory)
+		history.NodeId = c.NodeId
+		history.CreateTime = time.Now().Unix()
 
-	// 一般类型
-	history.Types = 0
-	_, err := session.InsertOne(history)
-	if err != nil {
-		session.Rollback()
-		return err
+		// 之前的内容要刷进历史表
+		history.Title = c.PreTitle
+		history.Describe = c.PreDescribe
+		history.ContentId = c.Id
+
+		// 一般自动刷新类型
+		history.Types = 0
+		_, err = session.InsertOne(history)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
 	}
-
-	// 版本要+1
-	c.Version = c.Version + 1
+	// 版本要+1，不需要加1，因为没有发布。
+	//c.Version = c.Version + 1
 	c.UpdateTime = time.Now().Unix()
 
 	// 把目前的内容写进去
 	c.PreDescribe = c.Describe
 	c.PreTitle = c.Title
 	c.PreFlush = 0
-	_, err = session.Cols("update_time", "version", "pre_title", "pre_describe", "pre_flush").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	_, err = session.Cols("update_time", "pre_title", "pre_describe", "pre_flush").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 	if err != nil {
 		session.Rollback()
 		return err
@@ -206,7 +209,7 @@ func (n *Content) UpdateNode(beforeNodeId int) error {
 	}
 
 	// 统计目前节点的数量
-	c, err := session.Table(n).Where("user_id=?", n.UserId).And("node_id", n.NodeId).Count()
+	c, err := session.Table(n).Where("user_id=?", n.UserId).And("node_id=?", n.NodeId).Count()
 	if err != nil {
 		session.Rollback()
 		return err
@@ -215,8 +218,15 @@ func (n *Content) UpdateNode(beforeNodeId int) error {
 	// 好，这个内容顶上
 	n.SortNum = c
 
-	// 每次更改节点，他都会成为这一层最靓丽排得最前面的仔
+	// 每次更改节点，他都会成为这一层排最后的仔
 	_, err = session.Exec("update fafacms_content SET sort_num=?, node_id=?, node_seo=? where id = ? and user_id = ?", n.SortNum, n.NodeId, n.NodeSeo, n.Id, n.UserId)
+	if err != nil {
+		session.Rollback()
+		return err
+	}
+
+	// 更新历史内容节点
+	_, err = session.Exec("update fafacms_content_history SET node_id=? where content_id = ? and user_id = ?", n.NodeId, n.Id, n.UserId)
 	if err != nil {
 		session.Rollback()
 		return err

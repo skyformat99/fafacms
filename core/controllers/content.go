@@ -62,6 +62,9 @@ func CreateContent(c *gin.Context) {
 			resp.Error = Error(ContentSeoAlreadyBeUsed, "")
 			return
 		}
+	} else {
+		resp.Error = Error(ParasError, "seo can not empty")
+		return
 	}
 
 	if req.NodeId == 0 {
@@ -326,6 +329,7 @@ func UpdateStatusOfContentAdmin(c *gin.Context) {
 	content.Id = req.Id
 	if req.Status != contentBefore.Status {
 		content.Status = req.Status
+		content.UserId = contentBefore.UserId
 		_, err = content.UpdateStatus()
 		if err != nil {
 			flog.Log.Errorf("UpdateStatusOfContentAdmin err:%s", err.Error())
@@ -461,12 +465,7 @@ func UpdateNodeOfContent(c *gin.Context) {
 		return
 	}
 
-	content := new(model.Content)
-	content.Id = req.Id
-	content.UserId = uu.Id
 	if req.NodeId != contentBefore.NodeId {
-		content.NodeId = req.NodeId
-
 		contentNode := new(model.ContentNode)
 		contentNode.Id = req.NodeId
 		contentNode.UserId = uu.Id
@@ -482,6 +481,10 @@ func UpdateNodeOfContent(c *gin.Context) {
 			return
 		}
 
+		content := new(model.Content)
+		content.Id = req.Id
+		content.UserId = uu.Id
+		content.NodeId = req.NodeId
 		content.NodeSeo = contentNode.Seo
 		content.SortNum = contentBefore.SortNum
 		err = content.UpdateNode(contentBefore.NodeId)
@@ -672,11 +675,13 @@ func UpdateInfoOfContent(c *gin.Context) {
 		return
 	}
 
-	content := new(model.Content)
-	content.Id = req.Id
-	content.UserId = uu.Id
-
 	if contentBefore.PreDescribe != req.Describe || contentBefore.PreTitle != req.Title {
+		content := new(model.Content)
+		content.Id = req.Id
+		content.UserId = uu.Id
+		content.NodeId = contentBefore.NodeId
+		content.PreDescribe = contentBefore.PreDescribe
+		content.PreTitle = contentBefore.PreTitle
 		content.Describe = req.Describe
 		content.Title = req.Title
 		err = content.UpdateDescribeAndHistory()

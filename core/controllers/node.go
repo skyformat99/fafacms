@@ -60,6 +60,9 @@ func CreateNode(c *gin.Context) {
 			resp.Error = Error(ContentNodeSeoAlreadyBeUsed, "")
 			return
 		}
+	} else {
+		resp.Error = Error(ParasError, "seo can not empty")
+		return
 	}
 
 	// 如果指定了父亲节点
@@ -740,7 +743,7 @@ func TakeNode(c *gin.Context) {
 	// 是顶层且需要列出儿子
 	if f.Level == 0 && req.ListSon {
 		ns := make([]model.ContentNode, 0)
-		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).Find(&	ns)
+		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).Find(&ns)
 		if err != nil {
 			flog.Log.Errorf("Node err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -1061,7 +1064,6 @@ func SortNode(c *gin.Context) {
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
-
 
 	// 先把x假装删掉，比x大的都-1，依次顶上x的位置，把大于y排序的节点都+1，腾出位置给x
 	// 同一级

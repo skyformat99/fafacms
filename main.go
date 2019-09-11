@@ -62,7 +62,7 @@ func init() {
 	flag.BoolVar(&createTable, "init_db", true, "create db table")
 	flag.BoolVar(&mailDebug, "email_debug", false, "Email debug")
 	flag.BoolVar(&canSkipAuth, "auth_skip_debug", false, "Auth skip debug")
-	flag.BoolVar(&historyRecord, "history_record", false, "Content history record")
+	flag.BoolVar(&historyRecord, "history_record", true, "Content history record")
 	flag.Parse()
 }
 

@@ -26,6 +26,7 @@ type Content struct {
 	Version      int    `json:"version"`                                                                            // 0表示什么都没发布  发布了多少次版本
 	CreateTime   int64  `json:"create_time"`
 	UpdateTime   int64  `json:"update_time,omitempty"`
+	EditTime     int64  `json:"edit_time,omitempty"`
 	PublishTime  int64  `json:"publish_time,omitempty"`
 	ImagePath    string `json:"image_path" xorm:"varchar(700)"`
 	Views        int    `json:"views"` // 被点击多少次，弱化
@@ -33,7 +34,7 @@ type Content struct {
 	SortNum      int64  `json:"sort_num"`
 }
 
-var ContentSortName = []string{"=id", "-user_id", "-top", `+sort_num`, "-create_time", "-update_time", "-views", "=version", "+status", "=seo"}
+var ContentSortName = []string{"=id", "-user_id", "-top", "+sort_num", "-publish_time", "-edit_time", "-create_time", "-update_time", "-views", "=version", "+status", "=seo"}
 
 // 内容历史表
 type ContentHistory struct {
@@ -43,7 +44,7 @@ type ContentHistory struct {
 	UserId     int    `json:"user_id" xorm:"bigint index"` // 内容所属的用户ID
 	NodeId     int    `json:"node_id" xorm:"bigint index"` // 内容所属的节点
 	Describe   string `json:"describe" xorm:"TEXT"`
-	Types      int    `json:"types" xorm:"not null comment('0 auto save, 1 publish, 3 cancel') TINYINT(1)"` // 0表示是自动刷新的，1表示发布，2表示是从历史版本恢复的
+	Types      int    `json:"types" xorm:"not null comment('0 auto save, 1 publish, 2 restore') TINYINT(1)"` // 0表示是自动刷新时的草稿，1表示发布时的内容，2表示是从历史版本恢复时的草稿
 	CreateTime int64  `json:"create_time"`
 }
 
@@ -99,7 +100,7 @@ func (c *Content) GetByRaw() (bool, error) {
 }
 
 // 更新内容，会写历史表
-func (c *Content) UpdateDescribeAndHistory() error {
+func (c *Content) UpdateDescribeAndHistory(save bool) error {
 	if c.UserId == 0 || c.Id == 0 {
 		return errors.New("where is empty")
 	}
@@ -108,7 +109,7 @@ func (c *Content) UpdateDescribeAndHistory() error {
 	defer session.Close()
 
 	var err error
-	if HistoryRecord {
+	if HistoryRecord && save && c.PreFlush != 1 {
 		history := new(ContentHistory)
 		history.NodeId = c.NodeId
 		history.CreateTime = time.Now().Unix()
@@ -117,6 +118,7 @@ func (c *Content) UpdateDescribeAndHistory() error {
 		history.Title = c.PreTitle
 		history.Describe = c.PreDescribe
 		history.ContentId = c.Id
+		history.UserId = c.UserId
 
 		// 一般自动刷新类型
 		history.Types = 0
@@ -129,12 +131,13 @@ func (c *Content) UpdateDescribeAndHistory() error {
 	// 版本要+1，不需要加1，因为没有发布。
 	//c.Version = c.Version + 1
 	c.UpdateTime = time.Now().Unix()
-
+	c.EditTime = time.Now().Unix()
 	// 把目前的内容写进去
 	c.PreDescribe = c.Describe
 	c.PreTitle = c.Title
 	c.PreFlush = 0
-	_, err = session.Cols("update_time", "pre_title", "pre_describe", "pre_flush").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+
+	_, err = session.Cols("edit_time", "update_time", "pre_title", "pre_describe", "pre_flush").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 	if err != nil {
 		session.Rollback()
 		return err
@@ -266,6 +269,7 @@ func (c *Content) PublishDescribe() error {
 		history.Title = c.PreTitle
 		history.Describe = c.PreDescribe
 		history.ContentId = c.Id
+		history.UserId = c.UserId
 
 		// 发布类型
 		history.Types = 1
@@ -306,29 +310,34 @@ func (c *Content) ResetDescribe() error {
 		return err
 	}
 
-	history := new(ContentHistory)
-	history.NodeId = c.NodeId
-	history.CreateTime = time.Now().Unix()
-	// 之前的内容要刷进历史表
-	history.Title = c.PreTitle
-	history.Describe = c.PreDescribe
-	history.ContentId = c.Id
+	if c.PreFlush != 1 {
+		history := new(ContentHistory)
+		history.NodeId = c.NodeId
+		history.CreateTime = time.Now().Unix()
+		// 之前的内容要刷进历史表
+		history.Title = c.PreTitle
+		history.Describe = c.PreDescribe
+		history.ContentId = c.Id
+		history.UserId = c.UserId
 
-	// 恢复类型
-	history.Types = 2
-	_, err := session.InsertOne(history)
-	if err != nil {
-		session.Rollback()
-		return err
+		// 恢复类型
+		history.Types = 2
+		_, err := session.InsertOne(history)
+		if err != nil {
+			session.Rollback()
+			return err
+		}
 	}
 
+	// 恢复不需要加1
 	// 版本要+1
-	c.Version = c.Version + 1
+	//c.Version = c.Version + 1
 	c.UpdateTime = time.Now().Unix()
+	c.EditTime = time.Now().Unix()
 	c.PreFlush = 0
 	c.PreTitle = c.Title
 	c.PreDescribe = c.Describe
-	_, err = session.Cols("pre_title", "pre_describe", "pre_flush", "update_time", "version").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	_, err := session.Cols("edit_time", "pre_title", "pre_describe", "pre_flush", "update_time").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 	if err != nil {
 		session.Rollback()
 		return err

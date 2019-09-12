@@ -26,6 +26,14 @@ func CreateTable(tables []interface{}) {
 			}
 
 			sess.Close()
+		} else {
+			sess := FafaRdb.Client.NewSession()
+			err = sess.Sync2(table)
+			if err != nil {
+				sess.Close()
+				fmt.Println(err.Error())
+			}
+			sess.Close()
 		}
 
 		err = FafaRdb.Client.CreateIndexes(table)

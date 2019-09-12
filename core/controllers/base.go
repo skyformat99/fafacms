@@ -49,6 +49,7 @@ const (
 	ContentInRubbish                  = 110004
 	ContentsAreInDifferentNode        = 110005
 	ContentHistoryNotFound            = 110006
+	ContentCanNotDelete               = 110007
 	AddUserCacheError                 = 120000
 	DeleteUserCacheError              = 120001
 	RefreshUserCacheError             = 120002
@@ -119,6 +120,8 @@ var ErrorMap = map[int]string{
 	ContentSeoAlreadyBeUsed:           "content seo already be used",
 	ContentInRubbish:                  "content in rubbish",
 	ContentsAreInDifferentNode:        "contents are in different node",
+	ContentHistoryNotFound:            "content history can not found",
+	ContentCanNotDelete:               "content can not delete for content not in rubbish",
 	SystemProblem:                     "system problem",
 	DbNotFound:                        "db not found",
 	DbRepeat:                          "db repeat data",

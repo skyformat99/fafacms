@@ -630,6 +630,7 @@ type UpdateInfoOfContentRequest struct {
 	Id       int    `json:"id" validate:"required"`
 	Title    string `json:"title" validate:"required"`
 	Describe string `json:"describe" validate:"omitempty"`
+	Save     bool   `json:"save"`
 }
 
 func UpdateInfoOfContent(c *gin.Context) {
@@ -682,9 +683,10 @@ func UpdateInfoOfContent(c *gin.Context) {
 		content.NodeId = contentBefore.NodeId
 		content.PreDescribe = contentBefore.PreDescribe
 		content.PreTitle = contentBefore.PreTitle
+		content.PreFlush = contentBefore.PreFlush
 		content.Describe = req.Describe
 		content.Title = req.Title
-		err = content.UpdateDescribeAndHistory()
+		err = content.UpdateDescribeAndHistory(req.Save)
 		if err != nil {
 			flog.Log.Errorf("UpdateInfoOfContent err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -747,8 +749,8 @@ func SortContent(c *gin.Context) {
 	}
 
 	if !exist {
-		flog.Log.Errorf("SortContent err: %s", "x node not found")
-		resp.Error = Error(ContentNotFound, "x node not found")
+		flog.Log.Errorf("SortContent err: %s", "x content not found")
+		resp.Error = Error(ContentNotFound, "x content not found")
 		return
 	}
 
@@ -796,13 +798,13 @@ func SortContent(c *gin.Context) {
 	}
 
 	if !exist {
-		flog.Log.Errorf("SortContent err: %s", "y node not found")
-		resp.Error = Error(ContentNotFound, "y node not found")
+		flog.Log.Errorf("SortContent err: %s", "y content not found")
+		resp.Error = Error(ContentNotFound, "y content not found")
 		return
 	}
 
 	if x.NodeId != y.NodeId {
-		flog.Log.Errorf("SortContent err: %s", "x y node are different")
+		flog.Log.Errorf("SortContent err: %s", "x y content's node are different")
 		resp.Error = Error(ContentsAreInDifferentNode, "")
 		return
 	}
@@ -1005,12 +1007,16 @@ type ListContentRequest struct {
 	Top              int      `json:"top" validate:"oneof=-1 0 1"`
 	Status           int      `json:"status" validate:"oneof=-1 0 1 2 3"`
 	CloseComment     int      `json:"close_comment" validate:"oneof=-1 0 1 2"`
+	PasswordType     int      `json:"password_type" validate:"oneof=-1 0 1"`
+	PublishType      int      `json:"publish_type" validate:"oneof=-1 0 1 2 3"`
 	UserId           int      `json:"user_id"`
 	UserName         string   `json:"user_name"`
 	CreateTimeBegin  int64    `json:"create_time_begin"`
 	CreateTimeEnd    int64    `json:"create_time_end"`
 	UpdateTimeBegin  int64    `json:"update_time_begin"`
 	UpdateTimeEnd    int64    `json:"update_time_end"`
+	EditTimeBegin    int64    `json:"edit_time_begin"`
+	EditTimeEnd      int64    `json:"edit_time_end"`
 	PublishTimeBegin int64    `json:"publish_time_begin"`
 	PublishTimeEnd   int64    `json:"publish_time_end"`
 	Sort             []string `json:"sort"`
@@ -1100,6 +1106,27 @@ func ListContentHelper(c *gin.Context, userId int) {
 		session.And("top=?", req.Top)
 	}
 
+	if req.PasswordType != -1 {
+		if req.PasswordType == 0 {
+			session.And("password=?", "")
+		} else {
+			session.And("password!=?", "")
+		}
+	}
+
+	if req.PublishType != -1 {
+		if req.PublishType == 0 {
+			session.And("version=?", 0)
+		} else if req.PublishType == 1 {
+			session.And("version>?", 0)
+		} else if req.PublishType == 2 {
+			session.And("version>?", 0)
+			session.And("pre_flush=?", 1)
+		} else {
+			session.And("version>?", 0)
+			session.And("pre_flush=?", 0)
+		}
+	}
 	if req.Seo != "" {
 		session.And("seo=?", req.Seo)
 	}
@@ -1140,6 +1167,14 @@ func ListContentHelper(c *gin.Context, userId int) {
 		session.And("publish_time<?", req.PublishTimeEnd)
 	}
 
+	if req.EditTimeBegin > 0 {
+		session.And("edit_time>=?", req.EditTimeBegin)
+	}
+
+	if req.EditTimeEnd > 0 {
+		session.And("edit_time<?", req.EditTimeEnd)
+	}
+
 	// count num
 	countSession := session.Clone()
 	defer countSession.Close()
@@ -1154,6 +1189,9 @@ func ListContentHelper(c *gin.Context, userId int) {
 	cs := make([]model.Content, 0)
 	p := &req.PageHelp
 	if total == 0 {
+		if p.Limit == 0 {
+			p.Limit = 20
+		}
 	} else {
 		// sql build
 		p.build(session, req.Sort, model.ContentSortName)
@@ -1175,7 +1213,7 @@ func ListContentHelper(c *gin.Context, userId int) {
 }
 
 type ListContentHistoryRequest struct {
-	Id     int      `json:"id" validate:"required"`
+	Id     int      `json:"content_id"`
 	UserId int      `json:"user_id"`
 	Sort   []string `json:"sort"`
 	PageHelp
@@ -1233,7 +1271,9 @@ func ListContentHistoryHelper(c *gin.Context, userId int) {
 	// group list where prepare
 	session.Table(new(model.ContentHistory)).Where("1=1")
 
-	session.And("content_id=?", req.Id)
+	if req.Id != 0 {
+		session.And("content_id=?", req.Id)
+	}
 
 	if userId != 0 {
 		session.And("user_id=?", userId)
@@ -1257,6 +1297,9 @@ func ListContentHistoryHelper(c *gin.Context, userId int) {
 	cs := make([]model.ContentHistory, 0)
 	p := &req.PageHelp
 	if total == 0 {
+		if p.Limit == 0 {
+			p.Limit = 20
+		}
 	} else {
 		// sql build
 		p.build(session, req.Sort, model.ContentHistorySortName)
@@ -1476,7 +1519,7 @@ type ReCycleOfContentInRubbishRequest struct {
 // 垃圾恢复
 func ReCycleOfContentInRubbish(c *gin.Context) {
 	resp := new(Resp)
-	req := new(SentContentToRubbishRequest)
+	req := new(ReCycleOfContentInRubbishRequest)
 	defer func() {
 		JSONL(c, 200, req, resp)
 	}()
@@ -1591,6 +1634,10 @@ func ReallyDeleteContent(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
+	} else {
+		flog.Log.Errorf("ReallyDeleteContent err: %s", "content can not delete")
+		resp.Error = Error(ContentCanNotDelete, "")
+		return
 	}
 
 	resp.Flag = true

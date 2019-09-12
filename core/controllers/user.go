@@ -737,6 +737,9 @@ func ListUser(c *gin.Context) {
 	users := make([]model.User, 0)
 	p := &req.PageHelp
 	if total == 0 {
+		if p.Limit == 0 {
+			p.Limit = 20
+		}
 	} else {
 		// sql build
 		p.build(session, req.Sort, model.UserSortName)

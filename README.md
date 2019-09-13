@@ -26,8 +26,7 @@
 7. 内容编辑器使用markdown，插入图片时调用图片接口，抽取数据库已上传图片供编辑者选择。上传本地图片，可选择为图片打标签等。
 8. 可以关闭用户注册，将用户加入黑名单，将内容封禁等。
 
-需求时刻迭代，具体的近期需求和想法准备可参见：[待做清单](/todo.md)。目前基本实现API可参考下方的文档。
-其他详细设计，以及约束请参考实际可用产品及[文档](https://github.com/hunterhug/fafadoc)，[前端-完善过程中](https://github.com/hunterhug/fafafront)
+需求时刻迭代，具体的近期需求和想法准备可参见：[待做清单](/todo.md)。详细设计，约束请参考实际可用产品及[文档](https://github.com/hunterhug/fafadoc)，[前端-完善过程中](https://github.com/hunterhug/fafafront)
 。
 
 ## 写给后端人员

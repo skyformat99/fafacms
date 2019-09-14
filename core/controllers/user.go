@@ -217,6 +217,7 @@ func CreateUser(c *gin.Context) {
 
 	// 默认激活
 	u.Status = 1
+	u.ActivateTime = time.Now().Unix()
 	err = u.InsertOne()
 	if err != nil {
 		flog.Log.Errorf("CreateUser err:%s", err.Error())
@@ -286,7 +287,7 @@ func ActivateUser(c *gin.Context) {
 	} else {
 		// 更新用户的状态
 		u.Status = 1
-		err = u.UpdateStatus()
+		err = u.UpdateActivateStatus()
 		if err != nil {
 			flog.Log.Errorf("ActivateUser err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())

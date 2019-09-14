@@ -35,6 +35,15 @@ type Content struct {
 }
 
 var ContentSortName = []string{"=id", "-user_id", "-top", "+sort_num", "-publish_time", "-edit_time", "-create_time", "-update_time", "-views", "=version", "+status", "=seo"}
+var ContentSortName2 = []string{
+	"=id",
+	"-user_id",
+	"-top",
+	"+sort_num",
+	"-publish_time",
+	"-create_time",
+	"-views",
+	"=seo",}
 
 // 内容历史表
 type ContentHistory struct {
@@ -255,6 +264,27 @@ func (n *Content) UpdateNode(beforeNodeId int) error {
 // 更新前都会调用， 不需要处理错误，不考虑互斥
 func (c *Content) UpdateView() {
 	FafaRdb.Client.ID(c.Id).Incr("views").Update(new(Content))
+}
+
+// get brother content
+func (c *Content) GetBrotherContent() (pre, next *Content, err error) {
+	pre = new(Content)
+	next = new(Content)
+	session1 := FafaRdb.Client.Where("sort_num > ?", c.SortNum).And("id!=?", c.Id).And("node_id=?", c.NodeId).Omit("describe", "pre_describe")
+	session1.And("status=?", 0).And("version>?", 0).Asc("sort_num").Limit(1)
+	_, err = session1.Get(next)
+	if err != nil {
+		return
+	}
+
+	session2 := FafaRdb.Client.Where("sort_num < ?", c.SortNum).And("id!=?", c.Id).And("node_id=?", c.NodeId).Omit("describe", "pre_describe")
+	session2.And("status=?", 0).And("version>?", 0).Desc("sort_num").Limit(1)
+	_, err = session2.Get(pre)
+	if err != nil {
+		return
+	}
+
+	return
 }
 
 // 发布更新内容

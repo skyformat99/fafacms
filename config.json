@@ -20,7 +20,7 @@
     "User": "root",
     "Pass": "123456789",
     "Port": "3306",
-    "MaxIdleConns": 20,
+    "MaxIdleConns": 10,
     "MaxOpenConns": 20,
     "DebugToFile": false,
     "DebugToFileName": "./data/log/fafacms_db.log",

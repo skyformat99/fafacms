@@ -23,15 +23,18 @@ type User struct {
 	HeadPhoto           string `json:"head_photo" xorm:"varchar(700)"`
 	CreateTime          int64  `json:"create_time"`
 	UpdateTime          int64  `json:"update_time,omitempty"`
+	ActivateTime        int64  `json:"activate_time,omitempty"`              // activate time
 	ActivateCode        string `json:"activate_code,omitempty" xorm:"index"` // activate code
 	ActivateCodeExpired int64  `json:"activate_code_expired,omitempty"`      // activate code expired time
 	Status              int    `json:"status" xorm:"not null comment('0 unactive, 1 normal, 2 black') TINYINT(1) index"`
 	GroupId             int    `json:"group_id,omitempty" xorm:"bigint index"`
 	ResetCode           string `json:"reset_code,omitempty" xorm:"index"` // forget password code
 	ResetCodeExpired    int64  `json:"reset_code_expired,omitempty"`      // forget password code expired
+	LoginTime           int64  `json:"login_time,omitempty"`              // login time last time
+	LoginIp             string `json:"login_ip,omitempty"`                // login ip last time
 }
 
-var UserSortName = []string{"=id", "=name", "-create_time", "-update_time", "-gender"}
+var UserSortName = []string{"=id", "=name", "-activate_time", "-create_time", "-update_time", "-gender"}
 
 // 获取用户信息，不存在用户报错
 func (u *User) Get() (err error) {
@@ -120,12 +123,12 @@ func (u *User) IsActivateCodeExist() (bool, error) {
 	return c, err
 }
 
-func (u *User) UpdateStatus() error {
+func (u *User) UpdateActivateStatus() error {
 	if u.Id == 0 {
 		return errors.New("where is empty")
 	}
-	u.UpdateTime = time.Now().Unix()
-	_, err := FafaRdb.Client.Where("id=?", u.Id).Cols("status", "update_time").Update(u)
+	u.ActivateTime = time.Now().Unix()
+	_, err := FafaRdb.Client.Where("id=?", u.Id).Cols("status", "activate_time").Update(u)
 	return err
 }
 
@@ -177,5 +180,14 @@ func (u *User) UpdateInfo() error {
 
 	u.UpdateTime = time.Now().Unix()
 	_, err := FafaRdb.Client.Where("id=?", u.Id).Omit("id").Update(u)
+	return err
+}
+
+func (u *User) UpdateLoginInfo() error {
+	if u.Id == 0 {
+		return errors.New("where is empty")
+	}
+
+	_, err := FafaRdb.Client.Where("id=?", u.Id).Cols("login_time", "login_ip").Update(u)
 	return err
 }

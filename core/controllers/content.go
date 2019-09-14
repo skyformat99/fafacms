@@ -17,7 +17,7 @@ type CreateContentRequest struct {
 	ImagePath    string `json:"image_path" validate:"omitempty"`          // picture
 	NodeId       int    `json:"node_id"`                                  // node
 	Password     string `json:"password"`                                 // if not empty will need a password in front end
-	CloseComment int    `json:"close_comment" validate:"oneof=0 1 2"`     // 0 stand for close comment, 1 can comment but should review, 2 can comment not need review
+	CloseComment int    `json:"close_comment" validate:"oneof=0 1"`       // 0 stand for close comment, 1 can comment
 }
 
 func CreateContent(c *gin.Context) {
@@ -561,6 +561,70 @@ func UpdateTopOfContent(c *gin.Context) {
 	resp.Flag = true
 }
 
+// update the comment of content
+type UpdateTopOfCommentRequest struct {
+	Id           int `json:"id" validate:"required"`
+	CloseComment int `json:"close_comment" validate:"oneof=0 1"`
+}
+
+func UpdateCommentOfContent(c *gin.Context) {
+	resp := new(Resp)
+	req := new(UpdateTopOfCommentRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	var validate = validator.New()
+	err := validate.Struct(req)
+	if err != nil {
+		flog.Log.Errorf("UpdateCommentOfContent err: %s", err.Error())
+		resp.Error = Error(ParasError, err.Error())
+		return
+	}
+
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("UpdateCommentOfContent err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	contentBefore := new(model.Content)
+	contentBefore.Id = req.Id
+	contentBefore.UserId = uu.Id
+	exist, err := contentBefore.Get()
+	if err != nil {
+		flog.Log.Errorf("UpdateCommentOfContent err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !exist {
+		flog.Log.Errorf("UpdateCommentOfContent err: %s", "content not found")
+		resp.Error = Error(ContentNotFound, "")
+		return
+	}
+
+	content := new(model.Content)
+	content.Id = req.Id
+	content.UserId = uu.Id
+	if req.CloseComment != contentBefore.CloseComment {
+		content.CloseComment = req.CloseComment
+		_, err = content.UpdateTop()
+		if err != nil {
+			flog.Log.Errorf("UpdateCommentOfContent err:%s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+	}
+	resp.Flag = true
+}
+
 // update the password of content, if password empty will not need password in front end
 type UpdatePasswordOfContentRequest struct {
 	Id       int    `json:"id" validate:"required"`
@@ -926,7 +990,8 @@ func PublishContent(c *gin.Context) {
 
 // 从历史版本恢复，只需要历史ID
 type RestoreContentRequest struct {
-	HistoryId int `json:"history_id" validate:"required"`
+	HistoryId int  `json:"history_id" validate:"required"`
+	Save      bool `json:"save"`
 }
 
 func RestoreContent(c *gin.Context) {
@@ -990,7 +1055,7 @@ func RestoreContent(c *gin.Context) {
 
 	content.Title = contentH.Title
 	content.Describe = contentH.Describe
-	err = content.ResetDescribe()
+	err = content.ResetDescribe(req.Save)
 	if err != nil {
 		flog.Log.Errorf("RestoreContent err: %s", err.Error())
 		resp.Error = Error(DBError, "")
@@ -1006,7 +1071,7 @@ type ListContentRequest struct {
 	NodeSeo          string   `json:"node_seo"`
 	Top              int      `json:"top" validate:"oneof=-1 0 1"`
 	Status           int      `json:"status" validate:"oneof=-1 0 1 2 3"`
-	CloseComment     int      `json:"close_comment" validate:"oneof=-1 0 1 2"`
+	CloseComment     int      `json:"close_comment" validate:"oneof=-1 0 1"`
 	PasswordType     int      `json:"password_type" validate:"oneof=-1 0 1"`
 	PublishType      int      `json:"publish_type" validate:"oneof=-1 0 1 2 3"`
 	UserId           int      `json:"user_id"`
@@ -1215,6 +1280,7 @@ func ListContentHelper(c *gin.Context, userId int) {
 type ListContentHistoryRequest struct {
 	Id     int      `json:"content_id"`
 	UserId int      `json:"user_id"`
+	Types  int      `json:"types" validate:"oneof=-1 0 1 2`
 	Sort   []string `json:"sort"`
 	PageHelp
 }
@@ -1281,6 +1347,10 @@ func ListContentHistoryHelper(c *gin.Context, userId int) {
 		if req.UserId != 0 {
 			session.And("user_id=?", req.UserId)
 		}
+	}
+
+	if req.Types != -1 {
+		session.And("types=?", req.Types)
 	}
 
 	// count num
@@ -1637,6 +1707,66 @@ func ReallyDeleteContent(c *gin.Context) {
 	} else {
 		flog.Log.Errorf("ReallyDeleteContent err: %s", "content can not delete")
 		resp.Error = Error(ContentCanNotDelete, "")
+		return
+	}
+
+	resp.Flag = true
+}
+
+type ReallyDeleteContentHistoryRequest struct {
+	Id int `json:"id" validate:"required"`
+}
+
+func ReallyDeleteHistoryContent(c *gin.Context) {
+	resp := new(Resp)
+	req := new(ReallyDeleteContentHistoryRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	var validate = validator.New()
+	err := validate.Struct(req)
+	if err != nil {
+		flog.Log.Errorf("ReallyDeleteHistoryContent err: %s", err.Error())
+		resp.Error = Error(ParasError, err.Error())
+		return
+	}
+
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("ReallyDeleteHistoryContent err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	contentBeforeH := new(model.ContentHistory)
+	contentBeforeH.Id = req.Id
+	contentBeforeH.UserId = uu.Id
+	exist, err := contentBeforeH.GetRaw()
+	if err != nil {
+		flog.Log.Errorf("ReallyDeleteHistoryContent err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !exist {
+		flog.Log.Errorf("ReallyDeleteHistoryContent err: %s", "content not found")
+		resp.Error = Error(ContentHistoryNotFound, "")
+		return
+	}
+
+	contentH := new(model.ContentHistory)
+	contentH.Id = req.Id
+	contentH.UserId = uu.Id
+	_, err = contentH.Delete()
+	if err != nil {
+		flog.Log.Errorf("ReallyDeleteHistoryContent err:%s", err.Error())
+		resp.Error = Error(DBError, err.Error())
 		return
 	}
 

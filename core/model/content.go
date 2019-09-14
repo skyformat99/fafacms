@@ -175,7 +175,7 @@ func (c *Content) UpdateStatus() (int64, error) {
 	return FafaRdb.Client.Cols("status").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
-// 更新Top
+// update Top
 func (c *Content) UpdateTop() (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
@@ -183,7 +183,15 @@ func (c *Content) UpdateTop() (int64, error) {
 	return FafaRdb.Client.Cols("top").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
-// 更新密码
+// update comment
+func (c *Content) UpdateComment() (int64, error) {
+	if c.UserId == 0 || c.Id == 0 {
+		return 0, errors.New("where is empty")
+	}
+	return FafaRdb.Client.Cols("close_comment").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+}
+
+// update password
 func (c *Content) UpdatePassword() (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
@@ -299,7 +307,7 @@ func (c *Content) PublishDescribe() error {
 	return nil
 }
 
-func (c *Content) ResetDescribe() error {
+func (c *Content) ResetDescribe(save bool) error {
 	if c.UserId == 0 || c.Id == 0 {
 		return errors.New("where is empty")
 	}
@@ -310,7 +318,7 @@ func (c *Content) ResetDescribe() error {
 		return err
 	}
 
-	if c.PreFlush != 1 {
+	if c.PreFlush != 1 && HistoryRecord && save {
 		history := new(ContentHistory)
 		history.NodeId = c.NodeId
 		history.CreateTime = time.Now().Unix()
@@ -383,4 +391,8 @@ func (c *Content) Delete() error {
 
 func (c *ContentHistory) GetRaw() (bool, error) {
 	return FafaRdb.Client.Get(c)
+}
+
+func (c *ContentHistory) Delete() (int64, error) {
+	return FafaRdb.Client.Where("id=?", c.Id).And("user_id=?", c.UserId).Delete(new(ContentHistory))
 }

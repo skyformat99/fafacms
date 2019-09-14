@@ -107,6 +107,7 @@ var (
 		"/content/admin/update/status": {"Update Content All Status", controllers.UpdateStatusOfContentAdmin, POST, true},           // 超级管理员修改文章，比如禁用或者逻辑删除/恢复文章
 		"/content/update/node":         {"Update Content Self Node", controllers.UpdateNodeOfContent, POST, false},                  // 更改内容的节点，顺便需要重新排序
 		"/content/update/top":          {"Update Content Self Top", controllers.UpdateTopOfContent, POST, false},                    // 设置内容的置顶与否
+		"/content/update/comment":      {"Update Content Self Comment", controllers.UpdateCommentOfContent, POST, false},            // 设置内容的置顶与否
 		"/content/update/password":     {"Update Content Self Password", controllers.UpdatePasswordOfContent, POST, false},          // 更改内容的密码保护
 		"/content/update/info":         {"Update Content Self Info", controllers.UpdateInfoOfContent, POST, false},                  // 更新内容标题和内容
 		"/content/sort":                {"Sort Content Self", controllers.SortContent, POST, false},                                 // 对内容进行拖曳排序
@@ -117,14 +118,15 @@ var (
 		"/content/delete":              {"Delete Content Self Real", controllers.ReallyDeleteContent, POST, false},                  // 逻辑删除文章 已经修正为真删除
 
 		// start review in 2019/5/16
-		"/content/take":               {"Take Content Self", controllers.TakeContent, GP, false},                     // 获取文章内容
-		"/content/admin/take":         {"Take Content Admin", controllers.TakeContentAdmin, GP, true},                // 管理员获取文章内容
-		"/content/history/take":       {"Take Content History Self", controllers.TakeContentHistory, GP, false},      // 获取文章历史内容
-		"/content/history/admin/take": {"Take Content History Admin", controllers.TakeContentHistoryAdmin, GP, true}, // 管理员获取文章历史内容
-		"/content/list":               {"List Content Self", controllers.ListContent, GP, false},                     // 列出文章
-		"/content/admin/list":         {"List Content All", controllers.ListContentAdmin, GP, true},                  // 管理员列出文章，什么类型都可以
-		"/content/history/list":       {"List Content History Self", controllers.ListContentHistory, GP, false},      // 列出文章的历史记录
-		"/content/history/admin/list": {"List Content History All", controllers.ListContentHistoryAdmin, GP, true},   // 管理员列出文章的历史纪录
+		"/content/take":               {"Take Content Self", controllers.TakeContent, GP, false},                                 // 获取文章内容
+		"/content/admin/take":         {"Take Content Admin", controllers.TakeContentAdmin, GP, true},                            // 管理员获取文章内容
+		"/content/history/take":       {"Take Content History Self", controllers.TakeContentHistory, GP, false},                  // 获取文章历史内容
+		"/content/history/admin/take": {"Take Content History Admin", controllers.TakeContentHistoryAdmin, GP, true},             // 管理员获取文章历史内容
+		"/content/list":               {"List Content Self", controllers.ListContent, GP, false},                                 // 列出文章
+		"/content/admin/list":         {"List Content All", controllers.ListContentAdmin, GP, true},                              // 管理员列出文章，什么类型都可以
+		"/content/history/list":       {"List Content History Self", controllers.ListContentHistory, GP, false},                  // 列出文章的历史记录
+		"/content/history/admin/list": {"List Content History All", controllers.ListContentHistoryAdmin, GP, true},               // 管理员列出文章的历史纪录
+		"/content/history/delete":     {"Delete Content History Self Real", controllers.ReallyDeleteHistoryContent, POST, false}, // 真删除历史内容
 
 		//
 		//"/comment/create": {controllers.CreateComment, POST},

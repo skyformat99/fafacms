@@ -39,7 +39,7 @@ type UploadResponse struct {
 	ReallyFileName string `json:"really_file_name"`
 	Size           int64  `json:"size"`
 	Url            string `json:"url"`
-	Url_X          string `json:"url_x"`
+	UrlX           string `json:"url_x"`
 	IsPicture      bool   `json:"is_picture"`
 	Addon          string `json:"addon"`
 	Oss            bool   `json:"oss"`
@@ -262,7 +262,7 @@ func UploadFile(c *gin.Context) {
 	data.Url = p.Url
 	data.Oss = p.StoreType == 1
 	if data.IsPicture {
-		data.Url_X = strings.Replace(p.Url, "/storage", "/storage_x", -1)
+		data.UrlX = strings.Replace(p.Url, "/storage", "/storage_x", -1)
 	}
 
 	resp.Data = data

@@ -483,8 +483,8 @@ type UserCountRequest struct {
 type UserCountX struct {
 	Count           int    `json:"count"`
 	Days            string `json:"days"`
-	CreateTimeBegin int64  `json:"create_time_begin"`
-	CreateTimeEnd   int64  `json:"create_time_end"`
+	CreateTimeBegin int64  `json:"first_publish_time_begin"`
+	CreateTimeEnd   int64  `json:"first_publish_time_end"`
 }
 type UserCountResponse struct {
 	Info     []UserCountX `json:"info"`

@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	version = "1.0.2"
+	version = "2.0.0"
 
 	// 全局配置文件路径
 	configFile string

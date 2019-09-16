@@ -592,7 +592,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	err = session.FafaSessionMgr.RefreshUser([]int{u.Id})
+	err = session.FafaSessionMgr.RefreshUser([]int64{u.Id})
 	if err != nil {
 		flog.Log.Errorf("UpdateUser err:%s", err.Error())
 		resp.Error = Error(RefreshUserCacheError, err.Error())
@@ -812,9 +812,9 @@ func ListGroupUser(c *gin.Context) {
 }
 
 type AssignGroupRequest struct {
-	GroupId      int   `json:"group_id"`
-	GroupRelease int   `json:"group_release"`
-	Users        []int `json:"users"`
+	GroupId      int64   `json:"group_id"`
+	GroupRelease int     `json:"group_release"`
+	Users        []int64 `json:"users"`
 }
 
 // 为用户分配组，每个用户只能有一个组，权限相对弱一点
@@ -897,7 +897,7 @@ func AssignGroupToUser(c *gin.Context) {
 }
 
 type UpdateUserAdminRequest struct {
-	Id       int    `json:"id" validate:"required"`
+	Id       int64  `json:"id" validate:"required"`
 	NickName string `json:"nick_name" validate:"omitempty"`
 	Password string `json:"password,omitempty"`
 	Status   int    `json:"status" validate:"oneof=0 1 2"`
@@ -953,7 +953,7 @@ func UpdateUserAdmin(c *gin.Context) {
 		return
 	}
 
-	err = session.FafaSessionMgr.RefreshUser([]int{u.Id})
+	err = session.FafaSessionMgr.RefreshUser([]int64{u.Id})
 	if err != nil {
 		flog.Log.Errorf("UpdateUserAdmin err:%s", err.Error())
 		resp.Error = Error(RefreshUserCacheError, err.Error())

@@ -23,10 +23,10 @@ type TokenManage interface {
 	SetToken(user *model.User, validTimes int64) (token string, err error) // 设置令牌，登录或者激活用户的时候，有效期7天，每次都是强覆盖
 	RefreshToken(token string) error                                       // 刷新令牌，每次浏览器启动时，自己保持的cookie请求延长令牌时间
 	DeleteToken(token string) error                                        // 删除令牌，在退出登录的时候
-	RefreshUser(id []int) error                                            // 刷新用户缓存信息
-	DeleteUserToken(id int) error                                          // 删除一个用户下面所有的临时令牌，在用户修改密码的情况
-	DeleteUser(id int) error                                               // 删除缓存中的用户信息，当用户被删除的时候应该删除
-	AddUser(id int) (user *model.User, err error)                          // 增加缓存mysql用户到redis，有效期1天
+	RefreshUser(id []int64) error                                          // 刷新用户缓存信息
+	DeleteUserToken(id int64) error                                        // 删除一个用户下面所有的临时令牌，在用户修改密码的情况
+	DeleteUser(id int64) error                                             // 删除缓存中的用户信息，当用户被删除的时候应该删除
+	AddUser(id int64) (user *model.User, err error)                        // 增加缓存mysql用户到redis，有效期1天
 }
 
 type RedisSession struct {
@@ -123,19 +123,19 @@ func HashTokenKey(token string) string {
 	return fmt.Sprintf("%s_%s", redisToken, token)
 }
 
-func GenToken(id int) string {
+func GenToken(id int64) string {
 	return fmt.Sprintf("%d_%s", id, util.GetGUID())
 }
 
-func HashUserKey(id int, name string) string {
+func HashUserKey(id int64, name string) string {
 	return fmt.Sprintf("%s_%d_%s", redisUser, id, name)
 }
 
-func UserKeys(id int) string {
+func UserKeys(id int64) string {
 	return fmt.Sprintf("%s_%d_*", redisUser, id)
 }
 
-func UserTokenKeys(id int) string {
+func UserTokenKeys(id int64) string {
 	return fmt.Sprintf("%s_%d_*", redisToken, id)
 }
 func (s *RedisSession) CheckToken(token string) (user *model.User, err error) {
@@ -174,7 +174,7 @@ func (s *RedisSession) CheckToken(token string) (user *model.User, err error) {
 	if err != nil {
 		return nil, errors.New("token invalid")
 	}
-	user, err = s.AddUser(id)
+	user, err = s.AddUser(int64(id))
 	return
 }
 
@@ -186,7 +186,7 @@ func (s *RedisSession) DeleteToken(token string) (err error) {
 	return s.Delete(HashTokenKey(token))
 }
 
-func (s *RedisSession) DeleteUserToken(id int) (err error) {
+func (s *RedisSession) DeleteUserToken(id int64) (err error) {
 	result, exist, err := s.Keys(UserTokenKeys(id))
 	if err == nil && exist {
 		for _, v := range result {
@@ -196,7 +196,7 @@ func (s *RedisSession) DeleteUserToken(id int) (err error) {
 	return
 }
 
-func (s *RedisSession) DeleteUser(id int) (err error) {
+func (s *RedisSession) DeleteUser(id int64) (err error) {
 	result, exist, err := s.Keys(UserKeys(id))
 	if err == nil && exist {
 		for _, v := range result {
@@ -206,7 +206,7 @@ func (s *RedisSession) DeleteUser(id int) (err error) {
 	return
 }
 
-func (s *RedisSession) AddUser(id int) (user *model.User, err error) {
+func (s *RedisSession) AddUser(id int64) (user *model.User, err error) {
 	user = new(model.User)
 	user.Id = id
 	exist, err := user.GetRaw()
@@ -233,7 +233,7 @@ func (s *RedisSession) AddUser(id int) (user *model.User, err error) {
 	return
 }
 
-func (s *RedisSession) RefreshUser(ids []int) (err error) {
+func (s *RedisSession) RefreshUser(ids []int64) (err error) {
 	for _, id := range ids {
 		s.AddUser(id)
 	}

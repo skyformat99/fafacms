@@ -86,7 +86,7 @@ func CreateGroup(c *gin.Context) {
 }
 
 type UpdateGroupRequest struct {
-	Id        int    `json:"id" validate:"required"`
+	Id        int64  `json:"id" validate:"required"`
 	Name      string `json:"name"`
 	Describe  string `json:"describe"`
 	ImagePath string `json:"image_path"`
@@ -185,7 +185,7 @@ func UpdateGroup(c *gin.Context) {
 }
 
 type DeleteGroupRequest struct {
-	Id   int    `json:"id" `
+	Id   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -271,7 +271,7 @@ func DeleteGroup(c *gin.Context) {
 }
 
 type TakeGroupRequest struct {
-	Id   int    `json:"id"`
+	Id   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -316,7 +316,7 @@ func TakeGroup(c *gin.Context) {
 }
 
 type ListGroupRequest struct {
-	Id              int      `json:"id"`
+	Id              int64    `json:"id"`
 	Name            string   `json:"name"`
 	CreateTimeBegin int64    `json:"create_time_begin"`
 	CreateTimeEnd   int64    `json:"create_time_end"`
@@ -422,14 +422,13 @@ func ListGroup(c *gin.Context) {
 }
 
 type ListGroupResourceRequest struct {
-	GroupId int `json:"group_id" validate:"required"`
+	GroupId int64 `json:"group_id" validate:"required"`
 }
 
 type ListGroupResourceResponse struct {
-	Resources []int `json:"resources"`
+	Resources []int64 `json:"resources"`
 }
 
-// 列出组下的资源
 func ListGroupResource(c *gin.Context) {
 	resp := new(Resp)
 
@@ -466,7 +465,7 @@ func ListGroupResource(c *gin.Context) {
 		return
 	}
 
-	rs := make([]int, 0)
+	rs := make([]int64, 0)
 	for _, v := range grs {
 		rs = append(rs, v.ResourceId)
 	}

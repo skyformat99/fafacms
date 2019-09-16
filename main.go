@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	version = "1.0.1"
+	version = "2.0.0"
 
 	// 全局配置文件路径
 	configFile string
@@ -67,8 +67,8 @@ func init() {
 }
 
 // 初始化URL资源
-func initResource() (adminUrl map[string]int) {
-	adminUrl = make(map[string]int)
+func initResource() (adminUrl map[string]int64) {
+	adminUrl = make(map[string]int64)
 	for url, handler := range router.V1Router {
 		if !handler.Admin {
 			continue
@@ -154,10 +154,14 @@ func main() {
 			model.Resource{},       // 资源表，主要为需要管理员权限的路由服务
 			model.GroupResource{},  // 组可以被分配资源
 			model.Content{},        // 内容表
+			model.ContentCool{},    // 内容点赞表
+			model.ContentBad{},     // 内容举报表
 			model.ContentHistory{}, // 内容历史表
 			model.ContentNode{},    // 内容节点表，内容必须拥有一个节点
 			model.File{},           // 文件表
-			//model.Comment{},        // 评论表
+			model.Comment{},        // 评论表
+			model.CommentCool{},    // 评论点赞表
+			model.CommentBad{},     // 评论举报表
 			//model.Log{},            // 日志表
 		})
 	}

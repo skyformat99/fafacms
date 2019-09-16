@@ -13,9 +13,9 @@ import (
 
 var TimeZone int64 = 0
 
-func GetSecond2DateTimes(secord int64) string {
-	secord = secord + 3600*TimeZone
-	tm := time.Unix(secord, 0)
+func GetSecond2DateTimes(second int64) string {
+	second = second + 3600*TimeZone
+	tm := time.Unix(second, 0)
 	return tm.UTC().Format("2006-01-02 15:04:05")
 
 }
@@ -30,7 +30,7 @@ func Home(c *gin.Context) {
 }
 
 type People struct {
-	Id              int    `json:"id"`
+	Id              int64  `json:"id"`
 	Name            string `json:"name"`
 	NickName        string `json:"nick_name"`
 	Email           string `json:"email"`
@@ -78,7 +78,6 @@ func Peoples(c *gin.Context) {
 	session := model.FafaRdb.Client.NewSession()
 	defer session.Close()
 
-	// 找出激活的用户
 	session.Table(new(model.User)).Where("1=1").And("status=?", 1).And("name!=?", "admin")
 
 	countSession := session.Clone()
@@ -147,9 +146,8 @@ func Peoples(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 返回的节点信息
 type Node struct {
-	Id            int    `json:"id"`
+	Id            int64  `json:"id"`
 	Seo           string `json:"seo"`
 	Name          string `json:"name"`
 	Describe      string `json:"describe"`
@@ -158,17 +156,17 @@ type Node struct {
 	CreateTimeInt int64  `json:"create_time_int"`
 	UpdateTime    string `json:"update_time,omitempty"`
 	UpdateTimeInt int64  `json:"update_time_int,omitempty"`
-	UserId        int    `json:"user_id"`
+	UserId        int64  `json:"user_id"`
 	UserName      string `json:"user_name"`
-	SortNum       int    `json:"sort_num"`
+	SortNum       int64  `json:"sort_num"`
 	Level         int    `json:"level"`
 	Status        int    `json:"status"`
-	ParentNodeId  int    `json:"parent_node_id"`
+	ParentNodeId  int64  `json:"parent_node_id"`
 	Son           []Node `json:"son,omitempty"`
 }
 
 type NodesInfoRequest struct {
-	UserId   int      `json:"user_id"`
+	UserId   int64    `json:"user_id"`
 	UserName string   `json:"user_name"`
 	Sort     []string `json:"sort"`
 }
@@ -177,7 +175,6 @@ type NodesResponse struct {
 	Nodes []Node `json:"nodes"`
 }
 
-// 列出全部节点
 func NodesInfo(c *gin.Context) {
 	resp := new(Resp)
 
@@ -406,7 +403,7 @@ func NodeInfo(c *gin.Context) {
 }
 
 type UserInfoRequest struct {
-	Id   int    `json:"user_id"`
+	Id   int64  `json:"user_id"`
 	Name string `json:"user_name"`
 }
 
@@ -479,7 +476,7 @@ func UserInfo(c *gin.Context) {
 }
 
 type UserCountRequest struct {
-	UserId   int    `json:"user_id"`
+	UserId   int64  `json:"user_id"`
 	UserName string `json:"user_name"`
 }
 
@@ -491,7 +488,7 @@ type UserCountX struct {
 }
 type UserCountResponse struct {
 	Info     []UserCountX `json:"info"`
-	UserId   int          `json:"user_id"`
+	UserId   int64        `json:"user_id"`
 	UserName string       `json:"user_name"`
 }
 
@@ -532,7 +529,7 @@ func UserCount(c *gin.Context) {
 
 	req.UserId = user.Id
 
-	sql := fmt.Sprintf("SELECT DATE_FORMAT(from_unixtime(create_time + %d * 3600)", TimeZone) + ",'%Y%m%d') days,count(id) count FROM `fafacms_content` WHERE user_id=? and version>0 and status=0 group by days;"
+	sql := fmt.Sprintf("SELECT DATE_FORMAT(from_unixtime(first_publish_time + %d * 3600)", TimeZone) + ",'%Y%m%d') days,count(id) count FROM `fafacms_content` WHERE first_publish_time!=0 and user_id=? and version>0 and status=0 group by days;"
 	result, err := model.FafaRdb.Client.QueryString(sql, req.UserId)
 	if err != nil {
 		flog.Log.Errorf("UserCount err:%s", err.Error())
@@ -562,38 +559,38 @@ func UserCount(c *gin.Context) {
 }
 
 type ContentsRequest struct {
-	NodeId           int      `json:"node_id"`
-	NodeSeo          string   `json:"node_seo"`
-	UserId           int      `json:"user_id"`
-	UserName         string   `json:"user_name"`
-	CreateTimeBegin  int64    `json:"create_time_begin"`
-	CreateTimeEnd    int64    `json:"create_time_end"`
-	PublishTimeBegin int64    `json:"publish_time_begin"`
-	PublishTimeEnd   int64    `json:"publish_time_end"`
-	Sort             []string `json:"sort"`
+	NodeId                int64    `json:"node_id"`
+	NodeSeo               string   `json:"node_seo"`
+	UserId                int64    `json:"user_id"`
+	UserName              string   `json:"user_name"`
+	FirstPublishTimeBegin int64    `json:"first_publish_time_begin"`
+	FirstPublishTimeEnd   int64    `json:"first_publish_time_end"`
+	PublishTimeBegin      int64    `json:"publish_time_begin"`
+	PublishTimeEnd        int64    `json:"publish_time_end"`
+	Sort                  []string `json:"sort"`
 	PageHelp
 }
 
 type ContentsX struct {
-	Id             int        `json:"id"`
-	Seo            string     `json:"seo"`
-	Title          string     `json:"title"`
-	UserId         int        `json:"user_id"`
-	UserName       string     `json:"user_name"`
-	NodeId         int        `json:"node_id"`
-	NodeSeo        string     `json:"node_seo"`
-	Top            int        `json:"top"`
-	CreateTime     string     `json:"create_time"`
-	PublishTime    string     `json:"publish_time,omitempty"`
-	CreateTimeInt  int64      `json:"create_time_int"`
-	PublishTimeInt int64      `json:"publish_time_int"`
-	ImagePath      string     `json:"image_path"`
-	Views          int        `json:"views"`
-	IsLock         bool       `json:"is_lock"`
-	Describe       string     `json:"describe"`
-	Next           *ContentsX `json:"next,omitempty"`
-	Pre            *ContentsX `json:"pre,omitempty"`
-	SortNum        int64      `json:"sort_num"`
+	Id                  int64      `json:"id"`
+	Seo                 string     `json:"seo"`
+	Title               string     `json:"title"`
+	UserId              int64      `json:"user_id"`
+	UserName            string     `json:"user_name"`
+	NodeId              int64      `json:"node_id"`
+	NodeSeo             string     `json:"node_seo"`
+	Top                 int        `json:"top"`
+	FirstPublishTime    string     `json:"first_publish_time"`
+	PublishTime         string     `json:"publish_time,omitempty"`
+	FirstPublishTimeInt int64      `json:"first_publish_time_int"`
+	PublishTimeInt      int64      `json:"publish_time_int"`
+	ImagePath           string     `json:"image_path"`
+	Views               int64      `json:"views"`
+	IsLock              bool       `json:"is_lock"`
+	Describe            string     `json:"describe"`
+	Next                *ContentsX `json:"next,omitempty"`
+	Pre                 *ContentsX `json:"pre,omitempty"`
+	SortNum             int64      `json:"sort_num"`
 }
 
 type ContentsResponse struct {
@@ -648,12 +645,12 @@ func Contents(c *gin.Context) {
 		session.And("node_seo=?", req.NodeSeo)
 	}
 
-	if req.CreateTimeBegin > 0 {
-		session.And("create_time>=?", req.CreateTimeBegin)
+	if req.FirstPublishTimeBegin > 0 {
+		session.And("first_publish_time>=?", req.FirstPublishTimeBegin)
 	}
 
-	if req.CreateTimeEnd > 0 {
-		session.And("create_time<?", req.CreateTimeEnd)
+	if req.FirstPublishTimeEnd > 0 {
+		session.And("first_publish_time<?", req.FirstPublishTimeEnd)
 	}
 
 	if req.PublishTimeBegin > 0 {
@@ -707,10 +704,10 @@ func Contents(c *gin.Context) {
 		temp.Title = c.Title
 		temp.NodeId = c.NodeId
 		temp.Views = c.Views
-		temp.CreateTime = GetSecond2DateTimes(c.CreateTime)
-		temp.PublishTime = GetSecond2DateTimes(c.PublishTime)
 		temp.ImagePath = c.ImagePath
-		temp.CreateTimeInt = c.CreateTime
+		temp.FirstPublishTime = GetSecond2DateTimes(c.FirstPublishTime)
+		temp.PublishTime = GetSecond2DateTimes(c.PublishTime)
+		temp.FirstPublishTimeInt = c.FirstPublishTime
 		temp.PublishTimeInt = c.PublishTime
 		if c.Password != "" {
 			temp.IsLock = true
@@ -732,8 +729,8 @@ func Contents(c *gin.Context) {
 }
 
 type ContentRequest struct {
-	Id       int    `json:"id"`
-	UserId   int    `json:"user_id"`
+	Id       int64  `json:"id"`
+	UserId   int64  `json:"user_id"`
 	UserName string `json:"user_name"`
 	Seo      string `json:"seo"`
 	Password string `json:"password"`
@@ -820,10 +817,10 @@ func Content(c *gin.Context) {
 	temp.NodeId = cx.NodeId
 	temp.Views = cx.Views
 	temp.SortNum = cx.SortNum
-	temp.CreateTime = GetSecond2DateTimes(cx.CreateTime)
+	temp.FirstPublishTime = GetSecond2DateTimes(cx.FirstPublishTime)
 	temp.PublishTime = GetSecond2DateTimes(cx.PublishTime)
-	temp.CreateTimeInt = cx.CreateTime
-	temp.PublishTimeInt = cx.UpdateTime
+	temp.FirstPublishTimeInt = cx.FirstPublishTime
+	temp.PublishTimeInt = cx.PublishTime
 	temp.ImagePath = cx.ImagePath
 	if cx.Password != "" {
 		temp.IsLock = true
@@ -857,10 +854,10 @@ func Content(c *gin.Context) {
 			temp1.NodeId = pre.NodeId
 			temp1.Views = pre.Views
 			temp1.SortNum = pre.SortNum
-			temp1.CreateTime = GetSecond2DateTimes(pre.CreateTime)
+			temp1.FirstPublishTime = GetSecond2DateTimes(pre.FirstPublishTime)
 			temp1.PublishTime = GetSecond2DateTimes(pre.PublishTime)
-			temp1.CreateTimeInt = pre.CreateTime
-			temp1.PublishTimeInt = pre.UpdateTime
+			temp1.FirstPublishTimeInt = pre.FirstPublishTime
+			temp1.PublishTimeInt = pre.PublishTime
 			temp1.ImagePath = pre.ImagePath
 			if pre.Password != "" {
 				temp1.IsLock = true
@@ -879,10 +876,10 @@ func Content(c *gin.Context) {
 			temp2.NodeId = next.NodeId
 			temp2.Views = next.Views
 			temp2.SortNum = next.SortNum
-			temp2.CreateTime = GetSecond2DateTimes(next.CreateTime)
+			temp2.FirstPublishTime = GetSecond2DateTimes(next.FirstPublishTime)
 			temp2.PublishTime = GetSecond2DateTimes(next.PublishTime)
-			temp2.CreateTimeInt = next.CreateTime
-			temp2.PublishTimeInt = next.UpdateTime
+			temp2.FirstPublishTimeInt = next.FirstPublishTime
+			temp2.PublishTimeInt = next.PublishTime
 			temp2.ImagePath = next.ImagePath
 			if next.Password != "" {
 				temp2.IsLock = true

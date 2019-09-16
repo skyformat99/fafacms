@@ -89,7 +89,7 @@ func Login(c *gin.Context) {
 	u.LoginIp = c.ClientIP()
 	u.LoginTime = time.Now().Unix()
 	u.UpdateLoginInfo()
-	session.FafaSessionMgr.RefreshUser([]int{u.Id})
+	session.FafaSessionMgr.RefreshUser([]int64{u.Id})
 
 	// 就算未激活，或者黑名单都可以登录，但授权的API无法使用，激活用户的时候session会生成一个新的，即新的token，并且用户缓存会刷新
 	token, err := SetUserSession(uu)

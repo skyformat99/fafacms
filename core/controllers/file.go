@@ -284,8 +284,8 @@ type ListFileAdminRequest struct {
 	Status          int      `json:"status" validate:"oneof=-1 0 1"`
 	Type            string   `json:"type"`
 	Tag             string   `json:"tag"`
-	UserId          int      `json:"user_id"`
-	Id              int      `json:"id"`
+	UserId          int64    `json:"user_id"`
+	Id              int64    `json:"id"`
 	IsPicture       int      `json:"is_picture" validate:"oneof=-1 0 1"`
 	PageHelp
 }
@@ -295,7 +295,7 @@ type ListFileAdminResponse struct {
 	PageHelp
 }
 
-func ListFileAdminHelper(c *gin.Context, userId int) {
+func ListFileAdminHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 
 	respResult := new(ListFileAdminResponse)
@@ -448,13 +448,13 @@ func ListFile(c *gin.Context) {
 }
 
 type UpdateFileRequest struct {
-	Id       int    `json:"id" validate:"required"`
+	Id       int64  `json:"id" validate:"required"`
 	Tag      string `json:"tag"`
 	Hide     bool   `json:"hide"`
 	Describe string `json:"describe"`
 }
 
-func UpdateFileAdminHelper(c *gin.Context, userId int) {
+func UpdateFileAdminHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 	req := new(UpdateFileRequest)
 	defer func() {

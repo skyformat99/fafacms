@@ -7,7 +7,7 @@ import (
 )
 
 type Group struct {
-	Id         int    `json:"id" xorm:"bigint pk autoincr"`
+	Id         int64  `json:"id" xorm:"bigint pk autoincr"`
 	Name       string `json:"name" xorm:"varchar(100) notnull unique"`
 	Describe   string `json:"describe" xorm:"TEXT"`
 	CreateTime int64  `json:"create_time"`
@@ -18,7 +18,7 @@ type Group struct {
 var GroupSortName = []string{"=id", "=name", "-create_time", "=update_time"}
 
 type Resource struct {
-	Id         int    `json:"id" xorm:"bigint pk autoincr"`
+	Id         int64  `json:"id" xorm:"bigint pk autoincr"`
 	Name       string `json:"name"`
 	Url        string `json:"url"`
 	UrlHash    string `json:"url_hash" xorm:"unique"`
@@ -30,9 +30,9 @@ type Resource struct {
 var ResourceSortName = []string{"=id", "+create_time", "-name"}
 
 type GroupResource struct {
-	Id         int `json:"id" xorm:"bigint pk autoincr"`
-	GroupId    int `json:"group_id index(gr)"`
-	ResourceId int `json:"resource_id index(gr)"`
+	Id         int64 `json:"id" xorm:"bigint pk autoincr"`
+	GroupId    int64 `json:"group_id index(gr)"`
+	ResourceId int64 `json:"resource_id index(gr)"`
 }
 
 func (g *Group) GetById() (exist bool, err error) {

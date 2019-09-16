@@ -12,7 +12,7 @@ type CreateNodeRequest struct {
 	Name         string `json:"name" validate:"required"`
 	Describe     string `json:"describe"`
 	ImagePath    string `json:"image_path"`
-	ParentNodeId int    `json:"parent_node_id"`
+	ParentNodeId int64  `json:"parent_node_id"`
 }
 
 func CreateNode(c *gin.Context) {
@@ -118,30 +118,30 @@ func CreateNode(c *gin.Context) {
 }
 
 type UpdateInfoOfNodeRequest struct {
-	Id       int    `json:"id" validate:"required"`
+	Id       int64  `json:"id" validate:"required"`
 	Name     string `json:"name"`
 	Describe string `json:"describe"`
 }
 
 type UpdateImageOfNodeRequest struct {
-	Id        int    `json:"id" validate:"required"`
+	Id        int64  `json:"id" validate:"required"`
 	ImagePath string `json:"image_path" validate:"required"`
 }
 
 type UpdateStatusOfNodeRequest struct {
-	Id     int `json:"id" validate:"required"`
-	Status int `json:"status" validate:"oneof=0 1"`
+	Id     int64 `json:"id" validate:"required"`
+	Status int   `json:"status" validate:"oneof=0 1"`
 }
 
 type UpdateSeoOfNodeRequest struct {
-	Id  int    `json:"id" validate:"required"`
+	Id  int64  `json:"id" validate:"required"`
 	Seo string `json:"seo" validate:"required,alphanumunicode"`
 }
 
 type UpdateParentOfNodeRequest struct {
-	Id           int  `json:"id" validate:"required"`
-	ToBeRoot     bool `json:"to_be_root"` // 升级为最上层节点
-	ParentNodeId int  `json:"parent_node_id"`
+	Id           int64 `json:"id" validate:"required"`
+	ToBeRoot     bool  `json:"to_be_root"` // 升级为最上层节点
+	ParentNodeId int64 `json:"parent_node_id"`
 }
 
 func UpdateSeoOfNode(c *gin.Context) {
@@ -545,7 +545,7 @@ func UpdateParentOfNode(c *gin.Context) {
 }
 
 type DeleteNodeRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
 // 删除节点
@@ -796,7 +796,7 @@ func ListNodeAdmin(c *gin.Context) {
 }
 
 // 可以查别人的节点
-func ListNodeHelper(c *gin.Context, userId int) {
+func ListNodeHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 
 	respResult := new(NodesResponse)
@@ -909,8 +909,8 @@ func ListNodeHelper(c *gin.Context, userId int) {
 // 所以想把一个X节点拖到父节点的最顶层是做不到的，需要拖两次
 // 上面拖两次的问题可以解决了，就是YID为空时，直接把他拖到最前面
 type SortNodeRequest struct {
-	XID int `json:"xid" validate:"required"`
-	YID int `json:"yid"`
+	XID int64 `json:"xid" validate:"required"`
+	YID int64 `json:"yid"`
 }
 
 //  节点

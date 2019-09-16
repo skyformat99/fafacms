@@ -12,7 +12,7 @@ import (
 
 // 列出资源
 type ListResourceRequest struct {
-	Id   int      `json:"id"`
+	Id   int64    `json:"id"`
 	Name string   `json:"name"`
 	Url  string   `json:"url"`
 	Sort []string `json:"sort"`
@@ -107,9 +107,9 @@ func ListResource(c *gin.Context) {
 }
 
 type AssignResourceToGroupRequest struct {
-	GroupId         int   `json:"group_id"`
-	ResourceRelease int   `json:"resource_release"`
-	Resources       []int `json:"resources"`
+	GroupId         int64   `json:"group_id"`
+	ResourceRelease int     `json:"resource_release"`
+	Resources       []int64 `json:"resources"`
 }
 
 func AssignResourceToGroup(c *gin.Context) {

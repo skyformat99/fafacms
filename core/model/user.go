@@ -7,17 +7,16 @@ import (
 	"time"
 )
 
-// 用户表
 type User struct {
-	Id                  int    `json:"id" xorm:"bigint pk autoincr"`
-	Name                string `json:"name" xorm:"varchar(100) notnull unique"`  // 独一无二的标志
-	NickName            string `json:"nick_name" xorm:"varchar(100) notnull"`    // 昵称，如小花花，随便改
-	Email               string `json:"email" xorm:"varchar(100) notnull unique"` // 邮箱，独一无二
+	Id                  int64  `json:"id" xorm:"bigint pk autoincr"`
+	Name                string `json:"name" xorm:"varchar(100) notnull unique"`
+	NickName            string `json:"nick_name" xorm:"varchar(100) notnull"`
+	Email               string `json:"email" xorm:"varchar(100) notnull unique"`
 	WeChat              string `json:"wechat" xorm:"varchar(100)"`
 	WeiBo               string `json:"weibo" xorm:"TEXT"`
 	Github              string `json:"github" xorm:"TEXT"`
 	QQ                  string `json:"qq" xorm:"varchar(100)"`
-	Password            string `json:"password,omitempty" xorm:"varchar(100)"` // 明文的密码，就是这么强
+	Password            string `json:"password,omitempty" xorm:"varchar(100)"`
 	Gender              int    `json:"gender" xorm:"not null comment('0 unknow,1 boy,2 girl') TINYINT(1)"`
 	Describe            string `json:"describe" xorm:"TEXT"`
 	HeadPhoto           string `json:"head_photo" xorm:"varchar(700)"`
@@ -27,7 +26,7 @@ type User struct {
 	ActivateCode        string `json:"activate_code,omitempty" xorm:"index"` // activate code
 	ActivateCodeExpired int64  `json:"activate_code_expired,omitempty"`      // activate code expired time
 	Status              int    `json:"status" xorm:"not null comment('0 unactive, 1 normal, 2 black') TINYINT(1) index"`
-	GroupId             int    `json:"group_id,omitempty" xorm:"bigint index"`
+	GroupId             int64  `json:"group_id,omitempty" xorm:"bigint index"`
 	ResetCode           string `json:"reset_code,omitempty" xorm:"index"` // forget password code
 	ResetCodeExpired    int64  `json:"reset_code_expired,omitempty"`      // forget password code expired
 	LoginTime           int64  `json:"login_time,omitempty"`              // login time last time
@@ -36,7 +35,6 @@ type User struct {
 
 var UserSortName = []string{"=id", "=name", "-activate_time", "-create_time", "-update_time", "-gender"}
 
-// 获取用户信息，不存在用户报错
 func (u *User) Get() (err error) {
 	var exist bool
 	exist, err = FafaRdb.Client.Get(u)
@@ -49,7 +47,6 @@ func (u *User) Get() (err error) {
 	return
 }
 
-// 原生获取用户信息
 func (u *User) GetRaw() (bool, error) {
 	return FafaRdb.Client.Get(u)
 }

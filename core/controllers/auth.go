@@ -16,7 +16,7 @@ var (
 	AuthDebug = false
 
 	// those api will be check resource
-	AdminUrl map[string]int
+	AdminUrl map[string]int64
 )
 
 // api access auth filter
@@ -142,7 +142,7 @@ func DeleteUserSession(c *gin.Context) error {
 	return err
 }
 
-func DeleteUserAllSession(id int) error {
+func DeleteUserAllSession(id int64) error {
 	err := session.FafaSessionMgr.DeleteUserToken(id)
 	return err
 }

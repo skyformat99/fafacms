@@ -15,7 +15,7 @@ type CreateContentRequest struct {
 	Top          int    `json:"top" validate:"oneof=0 1"`                 // 1 stand for let content on the top
 	Describe     string `json:"describe" validate:"omitempty"`            // content's body
 	ImagePath    string `json:"image_path" validate:"omitempty"`          // picture
-	NodeId       int    `json:"node_id"`                                  // node
+	NodeId       int64  `json:"node_id"`                                  // node
 	Password     string `json:"password"`                                 // if not empty will need a password in front end
 	CloseComment int    `json:"close_comment" validate:"oneof=0 1"`       // 0 stand for close comment, 1 can comment
 }
@@ -131,7 +131,7 @@ func CreateContent(c *gin.Context) {
 
 // update SEO
 type UpdateSeoOfContentRequest struct {
-	Id  int    `json:"id" validate:"required"`
+	Id  int64  `json:"id" validate:"required"`
 	Seo string `json:"seo" validate:"required,alphanumunicode"`
 }
 
@@ -207,7 +207,7 @@ func UpdateSeoOfContent(c *gin.Context) {
 
 // update the picture
 type UpdateImageOfContentRequest struct {
-	Id        int    `json:"id" validate:"required"`
+	Id        int64  `json:"id" validate:"required"`
 	ImagePath string `json:"image_path" validate:"required"`
 }
 
@@ -286,8 +286,8 @@ func UpdateImageOfContent(c *gin.Context) {
 
 // admin user update the status of content, 0 normal, 1 hide，2 ban, 3 rubbish
 type UpdateStatusOfContentAdminRequest struct {
-	Id     int `json:"id" validate:"required"`
-	Status int `json:"status" validate:"oneof=0 1 2 3"`
+	Id     int64 `json:"id" validate:"required"`
+	Status int   `json:"status" validate:"oneof=0 1 2 3"`
 }
 
 func UpdateStatusOfContentAdmin(c *gin.Context) {
@@ -342,8 +342,8 @@ func UpdateStatusOfContentAdmin(c *gin.Context) {
 
 // user update the status of content, 0 normal, 1 hide
 type UpdateStatusOfContentRequest struct {
-	Id     int `json:"id" validate:"required"`
-	Status int `json:"status" validate:"oneof=0 1"`
+	Id     int64 `json:"id" validate:"required"`
+	Status int   `json:"status" validate:"oneof=0 1"`
 }
 
 func UpdateStatusOfContent(c *gin.Context) {
@@ -418,8 +418,8 @@ func UpdateStatusOfContent(c *gin.Context) {
 
 // update the node of content
 type UpdateNodesOfContentRequest struct {
-	Id     int `json:"id" validate:"required"`
-	NodeId int `json:"node_id" validate:"required"`
+	Id     int64 `json:"id" validate:"required"`
+	NodeId int64 `json:"node_id" validate:"required"`
 }
 
 func UpdateNodeOfContent(c *gin.Context) {
@@ -499,8 +499,8 @@ func UpdateNodeOfContent(c *gin.Context) {
 
 // update the top of content
 type UpdateTopOfContentRequest struct {
-	Id  int `json:"id" validate:"required"`
-	Top int `json:"top" validate:"oneof=0 1"`
+	Id  int64 `json:"id" validate:"required"`
+	Top int   `json:"top" validate:"oneof=0 1"`
 }
 
 func UpdateTopOfContent(c *gin.Context) {
@@ -563,8 +563,8 @@ func UpdateTopOfContent(c *gin.Context) {
 
 // update the comment of content
 type UpdateTopOfCommentRequest struct {
-	Id           int `json:"id" validate:"required"`
-	CloseComment int `json:"close_comment" validate:"oneof=0 1"`
+	Id           int64 `json:"id" validate:"required"`
+	CloseComment int   `json:"close_comment" validate:"oneof=0 1"`
 }
 
 func UpdateCommentOfContent(c *gin.Context) {
@@ -627,7 +627,7 @@ func UpdateCommentOfContent(c *gin.Context) {
 
 // update the password of content, if password empty will not need password in front end
 type UpdatePasswordOfContentRequest struct {
-	Id       int    `json:"id" validate:"required"`
+	Id       int64  `json:"id" validate:"required"`
 	Password string `json:"password"`
 }
 
@@ -691,7 +691,7 @@ func UpdatePasswordOfContent(c *gin.Context) {
 
 // update the body and title of content
 type UpdateInfoOfContentRequest struct {
-	Id       int    `json:"id" validate:"required"`
+	Id       int64  `json:"id" validate:"required"`
 	Title    string `json:"title" validate:"required"`
 	Describe string `json:"describe" validate:"omitempty"`
 	Save     bool   `json:"save"`
@@ -763,8 +763,8 @@ func UpdateInfoOfContent(c *gin.Context) {
 // put Y on top of X
 // can drag sort
 type SortContentRequest struct {
-	XID int `json:"xid" validate:"required"`
-	YID int `json:"yid"`
+	XID int64 `json:"xid" validate:"required"`
+	YID int64 `json:"yid"`
 }
 
 // sort the content in a skr way
@@ -883,7 +883,6 @@ func SortContent(c *gin.Context) {
 		return
 	}
 
-	// 先把x假装删掉，比x大的都-1，依次顶上x的位置
 	_, err = session.Exec("update fafacms_content SET sort_num=sort_num-1 where sort_num > ? and user_id = ? and node_id = ?", x.SortNum, uu.Id, x.NodeId)
 	if err != nil {
 		session.Rollback()
@@ -892,7 +891,6 @@ func SortContent(c *gin.Context) {
 		return
 	}
 
-	// 把大于y排序的节点都+1，腾出位置给x
 	_, err = session.Exec("update fafacms_content SET sort_num=sort_num+1 where sort_num > ? and user_id = ? and node_id = ?", y.SortNum, uu.Id, y.NodeId)
 	if err != nil {
 		session.Rollback()
@@ -901,11 +899,9 @@ func SortContent(c *gin.Context) {
 		return
 	}
 
-	// x顶上, 且y>x
 	if y.SortNum > x.SortNum {
 		_, err = session.Exec("update fafacms_content SET sort_num=? where user_id = ? and id = ?", y.SortNum, uu.Id, x.Id)
 	} else {
-		// 否则
 		_, err = session.Exec("update fafacms_content SET sort_num=? where user_id = ? and id = ?", y.SortNum+1, uu.Id, x.Id)
 	}
 	if err != nil {
@@ -926,9 +922,8 @@ func SortContent(c *gin.Context) {
 	return
 }
 
-// 发布内容
 type PublishContentRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
 func PublishContent(c *gin.Context) {
@@ -988,10 +983,9 @@ func PublishContent(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 从历史版本恢复，只需要历史ID
 type RestoreContentRequest struct {
-	HistoryId int  `json:"history_id" validate:"required"`
-	Save      bool `json:"save"`
+	HistoryId int64 `json:"history_id" validate:"required"`
+	Save      bool  `json:"save"`
 }
 
 func RestoreContent(c *gin.Context) {
@@ -1065,26 +1059,26 @@ func RestoreContent(c *gin.Context) {
 }
 
 type ListContentRequest struct {
-	Id               int      `json:"id"`
-	Seo              string   `json:"seo" validate:"omitempty,alphanumunicode"`
-	NodeId           int      `json:"node_id"`
-	NodeSeo          string   `json:"node_seo"`
-	Top              int      `json:"top" validate:"oneof=-1 0 1"`
-	Status           int      `json:"status" validate:"oneof=-1 0 1 2 3"`
-	CloseComment     int      `json:"close_comment" validate:"oneof=-1 0 1"`
-	PasswordType     int      `json:"password_type" validate:"oneof=-1 0 1"`
-	PublishType      int      `json:"publish_type" validate:"oneof=-1 0 1 2 3"`
-	UserId           int      `json:"user_id"`
-	UserName         string   `json:"user_name"`
-	CreateTimeBegin  int64    `json:"create_time_begin"`
-	CreateTimeEnd    int64    `json:"create_time_end"`
-	UpdateTimeBegin  int64    `json:"update_time_begin"`
-	UpdateTimeEnd    int64    `json:"update_time_end"`
-	EditTimeBegin    int64    `json:"edit_time_begin"`
-	EditTimeEnd      int64    `json:"edit_time_end"`
-	PublishTimeBegin int64    `json:"publish_time_begin"`
-	PublishTimeEnd   int64    `json:"publish_time_end"`
-	Sort             []string `json:"sort"`
+	Id                    int64    `json:"id"`
+	Seo                   string   `json:"seo" validate:"omitempty,alphanumunicode"`
+	NodeId                int64    `json:"node_id"`
+	NodeSeo               string   `json:"node_seo"`
+	Top                   int      `json:"top" validate:"oneof=-1 0 1"`
+	Status                int      `json:"status" validate:"oneof=-1 0 1 2 3"`
+	CloseComment          int      `json:"close_comment" validate:"oneof=-1 0 1"`
+	PasswordType          int      `json:"password_type" validate:"oneof=-1 0 1"`
+	PublishType           int      `json:"publish_type" validate:"oneof=-1 0 1 2 3"`
+	UserId                int64    `json:"user_id"`
+	UserName              string   `json:"user_name"`
+	CreateTimeBegin       int64    `json:"create_time_begin"`
+	CreateTimeEnd         int64    `json:"create_time_end"`
+	UpdateTimeBegin       int64    `json:"update_time_begin"`
+	UpdateTimeEnd         int64    `json:"update_time_end"`
+	FirstPublishTimeBegin int64    `json:"first_publish_time_begin"`
+	FirstPublishTimeEnd   int64    `json:"first_publish_time_end"`
+	PublishTimeBegin      int64    `json:"publish_time_begin"`
+	PublishTimeEnd        int64    `json:"publish_time_end"`
+	Sort                  []string `json:"sort"`
 	PageHelp
 }
 
@@ -1111,7 +1105,7 @@ func ListContentAdmin(c *gin.Context) {
 	ListContentHelper(c, 0)
 }
 
-func ListContentHelper(c *gin.Context, userId int) {
+func ListContentHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 
 	respResult := new(ListContentResponse)
@@ -1232,12 +1226,12 @@ func ListContentHelper(c *gin.Context, userId int) {
 		session.And("publish_time<?", req.PublishTimeEnd)
 	}
 
-	if req.EditTimeBegin > 0 {
-		session.And("edit_time>=?", req.EditTimeBegin)
+	if req.FirstPublishTimeBegin > 0 {
+		session.And("first_publish_time>=?", req.FirstPublishTimeBegin)
 	}
 
-	if req.EditTimeEnd > 0 {
-		session.And("edit_time<?", req.EditTimeEnd)
+	if req.FirstPublishTimeEnd > 0 {
+		session.And("first_publish_time<?", req.FirstPublishTimeEnd)
 	}
 
 	// count num
@@ -1278,9 +1272,9 @@ func ListContentHelper(c *gin.Context, userId int) {
 }
 
 type ListContentHistoryRequest struct {
-	Id     int      `json:"content_id"`
-	UserId int      `json:"user_id"`
-	Types  int      `json:"types" validate:"oneof=-1 0 1 2`
+	Id     int64    `json:"content_id"`
+	UserId int64    `json:"user_id"`
+	Types  int      `json:"types" validate:"oneof=-1 0 1 2"`
 	Sort   []string `json:"sort"`
 	PageHelp
 }
@@ -1308,7 +1302,7 @@ func ListContentHistoryAdmin(c *gin.Context) {
 	ListContentHistoryHelper(c, 0)
 }
 
-func ListContentHistoryHelper(c *gin.Context, userId int) {
+func ListContentHistoryHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 
 	respResult := new(ListContentHistoryResponse)
@@ -1391,11 +1385,10 @@ func ListContentHistoryHelper(c *gin.Context, userId int) {
 }
 
 type TakeContentRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
-// 获取内容
-func TakeContentHelper(c *gin.Context, userId int) {
+func TakeContentHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 	req := new(TakeContentRequest)
 	defer func() {
@@ -1454,10 +1447,10 @@ func TakeContentAdmin(c *gin.Context) {
 }
 
 type TakeContentHistoryRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
-func TakeContentHistoryHelper(c *gin.Context, userId int) {
+func TakeContentHistoryHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 	req := new(TakeContentHistoryRequest)
 	defer func() {
@@ -1516,10 +1509,9 @@ func TakeContentHistoryAdmin(c *gin.Context) {
 }
 
 type SentContentToRubbishRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
-// 垃圾回收，假删除(容忍禁止的内容丢出去.这样是个漏洞，允许他 !!!)
 func SentContentToRubbish(c *gin.Context) {
 	resp := new(Resp)
 	req := new(SentContentToRubbishRequest)
@@ -1583,10 +1575,9 @@ func SentContentToRubbish(c *gin.Context) {
 }
 
 type ReCycleOfContentInRubbishRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
-// 垃圾恢复
 func ReCycleOfContentInRubbish(c *gin.Context) {
 	resp := new(Resp)
 	req := new(ReCycleOfContentInRubbishRequest)
@@ -1647,7 +1638,7 @@ func ReCycleOfContentInRubbish(c *gin.Context) {
 }
 
 type ReallyDeleteContentRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
 func ReallyDeleteContent(c *gin.Context) {
@@ -1693,7 +1684,6 @@ func ReallyDeleteContent(c *gin.Context) {
 		return
 	}
 
-	// 只有回收站的才能删除
 	if contentBefore.Status == 3 {
 		content := new(model.Content)
 		content.Id = req.Id
@@ -1714,7 +1704,7 @@ func ReallyDeleteContent(c *gin.Context) {
 }
 
 type ReallyDeleteContentHistoryRequest struct {
-	Id int `json:"id" validate:"required"`
+	Id int64 `json:"id" validate:"required"`
 }
 
 func ReallyDeleteHistoryContent(c *gin.Context) {

@@ -25,6 +25,7 @@ type Content struct {
 	Version          int    `json:"version"`
 	CreateTime       int64  `json:"create_time"`
 	UpdateTime       int64  `json:"update_time,omitempty"`
+	BanTime          int64  `json:"ban_time,omitempty"`
 	FirstPublishTime int64  `json:"first_publish_time,omitempty"`
 	PublishTime      int64  `json:"publish_time,omitempty"`
 	ImagePath        string `json:"image_path" xorm:"varchar(700)"`
@@ -36,7 +37,7 @@ type Content struct {
 	CommentNum       int64  `json:"comment_num"`
 }
 
-var ContentSortName = []string{"=id", "-user_id", "-top", "+sort_num", "-first_publish_time", "-publish_time", "-create_time", "-update_time", "-views", "=version", "+status", "=seo"}
+var ContentSortName = []string{"=id", "-user_id", "-top", "+sort_num", "-first_publish_time", "-publish_time", "-create_time", "-update_time", "-views", "=comment_num", "=bad", "=cool", "=version", "+status", "=seo"}
 var ContentSortName2 = []string{
 	"=id",
 	"-user_id",
@@ -44,22 +45,8 @@ var ContentSortName2 = []string{
 	"+sort_num",
 	"-first_publish_time",
 	"-publish_time",
-	"-views",
+	"-views", "=comment_num", "=bad", "=cool",
 	"=seo",}
-
-type ContentCool struct {
-	Id         int64 `json:"id" xorm:"bigint pk autoincr"`
-	UserId     int64 `json:"user_id" xorm:"bigint index"`
-	ContentId  int64 `json:"content_id,omitempty" xorm:"bigint index"`
-	CreateTime int64 `json:"create_time"`
-}
-
-type ContentBad struct {
-	Id         int64 `json:"id" xorm:"bigint pk autoincr"`
-	UserId     int64 `json:"user_id" xorm:"bigint index"`
-	ContentId  int64 `json:"content_id,omitempty" xorm:"bigint index"`
-	CreateTime int64 `json:"create_time"`
-}
 
 type ContentHistory struct {
 	Id         int64  `json:"id" xorm:"bigint pk autoincr"`
@@ -178,9 +165,43 @@ func (c *Content) UpdateImage() (int64, error) {
 	return FafaRdb.Client.Cols("image_path").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
-func (c *Content) UpdateStatus() (int64, error) {
+func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
+	}
+
+	if c.Status == 2 {
+		c.BanTime = time.Now().Unix()
+		return FafaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	}
+
+	if isBanChange {
+		se := FafaRdb.Client.NewSession()
+		err := se.Begin()
+		if err != nil {
+			return 0, err
+		}
+
+		_, err = se.Where("content_id=?", c.Id).Delete(new(ContentBad))
+		if err != nil {
+			se.Rollback()
+			return 0, err
+		}
+
+		c.BanTime = 0
+		c.Bad = 0
+		_, err = se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+		if err != nil {
+			se.Rollback()
+			return 0, err
+		}
+
+		err = se.Commit()
+		if err != nil {
+			se.Rollback()
+			return 0, err
+		}
+		return 0, nil
 	}
 	return FafaRdb.Client.Cols("status").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
@@ -413,4 +434,184 @@ func (c *ContentHistory) GetRaw() (bool, error) {
 
 func (c *ContentHistory) Delete() (int64, error) {
 	return FafaRdb.Client.Where("id=?", c.Id).And("user_id=?", c.UserId).Delete(new(ContentHistory))
+}
+
+type ContentCool struct {
+	Id         int64 `json:"id" xorm:"bigint pk autoincr"`
+	UserId     int64 `json:"user_id" xorm:"bigint index(gr)"`
+	ContentId  int64 `json:"content_id,omitempty" xorm:"bigint index(gr)"`
+	CreateTime int64 `json:"create_time"`
+}
+
+type ContentBad struct {
+	Id         int64 `json:"id" xorm:"bigint pk autoincr"`
+	UserId     int64 `json:"user_id" xorm:"bigint index(gr)"`
+	ContentId  int64 `json:"content_id,omitempty" xorm:"bigint index(gr)"`
+	CreateTime int64 `json:"create_time"`
+}
+
+func (c *ContentCool) Exist() (ok bool, err error) {
+	if c.UserId == 0 || c.ContentId == 0 {
+		return false, errors.New("where is empty")
+	}
+	num, err := FafaRdb.Client.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Count(new(ContentCool))
+	if err != nil {
+		return false, err
+	}
+	if num > 1 {
+		return true, nil
+	}
+
+	return
+}
+
+func (c *ContentCool) Create() (err error) {
+	if c.UserId == 0 || c.ContentId == 0 {
+		return errors.New("where is empty")
+	}
+
+	c.CreateTime = time.Now().Unix()
+
+	se := FafaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = se.InsertOne(c)
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	_, err = se.Where("id=?", c.ContentId).Incr("cool").Update(new(Content))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *ContentCool) Delete() (err error) {
+	if c.UserId == 0 || c.ContentId == 0 {
+		return errors.New("where is empty")
+	}
+	se := FafaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = se.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Delete(new(ContentCool))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	_, err = se.Where("id=?", c.ContentId).And("cool>=?", 1).Decr("cool").Update(new(Content))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *ContentBad) Exist() (ok bool, err error) {
+	if c.UserId == 0 || c.ContentId == 0 {
+		return false, errors.New("where is empty")
+	}
+	num, err := FafaRdb.Client.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Count(new(ContentBad))
+	if err != nil {
+		return false, err
+	}
+	if num > 1 {
+		return true, nil
+	}
+
+	return
+}
+
+func (c *ContentBad) Create() (err error) {
+	if c.UserId == 0 || c.ContentId == 0 {
+		return errors.New("where is empty")
+	}
+
+	c.CreateTime = time.Now().Unix()
+	se := FafaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = se.InsertOne(c)
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	_, err = se.Where("id=?", c.ContentId).Incr("bad").Update(new(Content))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *ContentBad) Delete() (err error) {
+	if c.UserId == 0 || c.ContentId == 0 {
+		return errors.New("where is empty")
+	}
+	se := FafaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = se.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Delete(new(ContentBad))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	_, err = se.Where("id=?", c.ContentId).And("bad>=?", 1).Decr("bad").Update(new(Content))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *Content) Ban(num int64) (err error) {
+	if c.Id == 0 {
+		return errors.New("where is empty")
+	}
+
+	c.BanTime = time.Now().Unix()
+	c.Status = 2
+	_, err = FafaRdb.Client.Where("id=?", c.Id).And("status!=?", 2).And("bad>?", num).Cols("ban_time", "status").Update(c)
+	return
 }

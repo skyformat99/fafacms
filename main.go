@@ -49,6 +49,9 @@ var (
 
 	// 与UTC的时区偏移量
 	timeZone int64
+
+	// 举报次数，大于此次数自动违禁
+	banTime int64
 )
 
 // 初始化时解析命令行，辅助程序
@@ -57,6 +60,7 @@ func init() {
 	// 默认读取本路径下 ./config.json 配置
 	flag.StringVar(&configFile, "config", "./config.json", "config file")
 	flag.Int64Var(&timeZone, "time_zone", 8, "time zone offset the utc")
+	flag.Int64Var(&banTime, "ban_time", 10, "how much time to bad a content or comment will ban it")
 
 	// 正式部署时，请全部设置为 false
 	flag.BoolVar(&createTable, "init_db", true, "create db table")
@@ -100,7 +104,6 @@ func initResource() (adminUrl map[string]int64) {
 			adminUrl[url1] = r.Id
 		}
 	}
-	//fmt.Printf("admin url:%#v\n", adminUrl)
 	return adminUrl
 }
 
@@ -112,6 +115,7 @@ func main() {
 	mail.Debug = mailDebug
 	controllers.AuthDebug = canSkipAuth
 	controllers.TimeZone = timeZone
+	controllers.BadTime = banTime
 	model.HistoryRecord = historyRecord
 
 	var err error

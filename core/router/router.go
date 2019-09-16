@@ -33,6 +33,9 @@ var (
 		"/u/content": {"List User Content", controllers.Contents, GP, false},   // 列出某用户下文章（某用户可留空）
 		"/content":   {"Get Content", controllers.Content, GP, false},          // 获取文章
 
+		// start at 2019/9
+		"/content/comment": {"List Comment of Content", controllers.ListHomeComment, GP, false}, // 列出文章下的评论
+
 		// 前端的用户授权路由，不需要登录即可操作
 		// 已经Review 2019/5/12 chen
 		"/user/token/get":       {"User Token get", controllers.Login, GP, false},
@@ -128,12 +131,17 @@ var (
 		"/content/history/admin/list": {"List Content History All", controllers.ListContentHistoryAdmin, GP, true},               // 管理员列出文章的历史纪录
 		"/content/history/delete":     {"Delete Content History Self Real", controllers.ReallyDeleteHistoryContent, POST, false}, // 真删除历史内容
 
-		//
-		//"/comment/create": {controllers.CreateComment, POST},
-		//"/comment/update": {controllers.UpdateComment, POST},
-		//"/comment/delete": {controllers.DeleteComment, POST},
-		//"/comment/take":   {controllers.TakeComment, GP},
-		//"/comment/list":   {controllers.ListComment, GP},
+		// start at 2019/9
+		"/content/cool":                {"Cool the Content Self", controllers.CoolContent, GP, false},          // 点赞内容
+		"/content/bad":                 {"Bad the Content Self", controllers.BadContent, GP, false},            // 举报内容
+		"/comment/cool":                {"Cool the Comment Self", controllers.CreateComment, GP, false},        // 点赞评论
+		"/comment/bad":                 {"Bad the Comment Self", controllers.CreateComment, GP, false},         // 举报评论
+		"/comment/create":              {"Create the Comment Self", controllers.CreateComment, POST, false},    // 创建评论
+		"/comment/delete":              {"Delete the Comment Self", controllers.DeleteComment, POST, false},    // 删除评论
+		"/comment/take":                {"Take the Comment Self", controllers.TakeComment, GP, false},          // 获取评论
+		"/comment/list":                {"List the Comment Self", controllers.ListComment, GP, false},          // 列出评论
+		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},          // 管理员列出评论
+		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.ListComment, GP, true}, // 管理员评论违禁处理
 	}
 )
 

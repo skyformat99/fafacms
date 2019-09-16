@@ -591,6 +591,9 @@ type ContentsX struct {
 	Next                *ContentsX `json:"next,omitempty"`
 	Pre                 *ContentsX `json:"pre,omitempty"`
 	SortNum             int64      `json:"sort_num"`
+	Bad                 int64      `json:"bad"`
+	Cool                int64      `json:"cool"`
+	CommentNum          int64      `json:"comment_num"`
 }
 
 type ContentsResponse struct {
@@ -635,7 +638,7 @@ func Contents(c *gin.Context) {
 		session.And("user_name=?", req.UserName)
 	}
 
-	session.And("status=?", 0).And("version>?", 0)
+	session.And("status!=?", 1).And("status!=?", 3).And("version>?", 0)
 
 	if req.NodeId != 0 {
 		session.And("node_id=?", req.NodeId)
@@ -709,6 +712,9 @@ func Contents(c *gin.Context) {
 		temp.PublishTime = GetSecond2DateTimes(c.PublishTime)
 		temp.FirstPublishTimeInt = c.FirstPublishTime
 		temp.PublishTimeInt = c.PublishTime
+		temp.CommentNum = c.CommentNum
+		temp.Bad = c.Bad
+		temp.Cool = c.Cool
 		if c.Password != "" {
 			temp.IsLock = true
 		}
@@ -822,6 +828,9 @@ func Content(c *gin.Context) {
 	temp.FirstPublishTimeInt = cx.FirstPublishTime
 	temp.PublishTimeInt = cx.PublishTime
 	temp.ImagePath = cx.ImagePath
+	temp.CommentNum = cx.CommentNum
+	temp.Bad = cx.Bad
+	temp.Cool = cx.Cool
 	if cx.Password != "" {
 		temp.IsLock = true
 	}
@@ -859,6 +868,9 @@ func Content(c *gin.Context) {
 			temp1.FirstPublishTimeInt = pre.FirstPublishTime
 			temp1.PublishTimeInt = pre.PublishTime
 			temp1.ImagePath = pre.ImagePath
+			temp1.CommentNum = pre.CommentNum
+			temp1.Bad = pre.Bad
+			temp1.Cool = pre.Cool
 			if pre.Password != "" {
 				temp1.IsLock = true
 			}
@@ -881,6 +893,9 @@ func Content(c *gin.Context) {
 			temp2.FirstPublishTimeInt = next.FirstPublishTime
 			temp2.PublishTimeInt = next.PublishTime
 			temp2.ImagePath = next.ImagePath
+			temp2.CommentNum = next.CommentNum
+			temp2.Bad = next.Bad
+			temp2.Cool = next.Cool
 			if next.Password != "" {
 				temp2.IsLock = true
 			}

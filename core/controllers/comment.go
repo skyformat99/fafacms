@@ -38,3 +38,10 @@ func ListComment(c *gin.Context) {
 		JSONL(c, 200, nil, resp)
 	}()
 }
+
+func ListHomeComment(c *gin.Context) {
+	resp := new(Resp)
+	defer func() {
+		JSONL(c, 200, nil, resp)
+	}()
+}

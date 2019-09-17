@@ -132,8 +132,9 @@ var (
 		"/content/history/delete":     {"Delete Content History Self Real", controllers.ReallyDeleteHistoryContent, POST, false}, // 真删除历史内容
 
 		// start at 2019/9
-		"/content/cool":                {"Cool the Content Self", controllers.CoolContent, GP, false},          // 点赞内容
-		"/content/bad":                 {"Bad the Content Self", controllers.BadContent, GP, false},            // 举报内容
+		"/content/cool": {"Cool the Content Self", controllers.CoolContent, GP, false}, // 点赞内容
+		"/content/bad":  {"Bad the Content Self", controllers.BadContent, GP, false},   // 举报内容
+
 		"/comment/cool":                {"Cool the Comment Self", controllers.CreateComment, GP, false},        // 点赞评论
 		"/comment/bad":                 {"Bad the Comment Self", controllers.CreateComment, GP, false},         // 举报评论
 		"/comment/create":              {"Create the Comment Self", controllers.CreateComment, POST, false},    // 创建评论

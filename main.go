@@ -166,6 +166,7 @@ func main() {
 			model.Comment{},        // 评论表
 			model.CommentCool{},    // 评论点赞表
 			model.CommentBad{},     // 评论举报表
+			model.Message{},        // 站内信表
 			//model.Log{},            // 日志表
 		})
 	}

@@ -6,10 +6,13 @@ import (
 	"github.com/hunterhug/fafacms/core/model"
 )
 
-var BadTime int64 = 0
+var (
+	BadTime int64 = 0
+	AutoBan       = false
+)
 
 type CoolContentRequest struct {
-	ContentId int64 `json:"content_id"`
+	ContentId int64 `json:"id"`
 }
 
 func CoolContent(c *gin.Context) {
@@ -37,13 +40,39 @@ func CoolContent(c *gin.Context) {
 		return
 	}
 
-	cool := new(model.ContentCool)
-	cool.ContentId = req.ContentId
-	cool.UserId = uu.Id
-	ok, err := cool.Exist()
+	content := new(model.Content)
+	content.Id = req.ContentId
+	ok, err := content.GetByRaw()
 	if err != nil {
 		flog.Log.Errorf("CoolContent err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok {
+		flog.Log.Errorf("CoolContent err: %s", "content not found")
+		resp.Error = Error(ContentNotFound, "")
+		return
+	}
+
+	if content.Status != 0 {
+		flog.Log.Errorf("CoolContent err: %s", "content status not 0 or not publish")
+		if content.Status == 2 {
+			resp.Error = Error(ContentBanPermit, "")
+		} else {
+			resp.Error = Error(ContentNotFound, "")
+		}
+		return
+	}
+
+	cool := new(model.ContentCool)
+	cool.ContentId = req.ContentId
+	cool.UserId = uu.Id
+	ok, err = cool.Exist()
+	if err != nil {
+		flog.Log.Errorf("CoolContent err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
 	}
 
 	if ok {
@@ -67,7 +96,7 @@ func CoolContent(c *gin.Context) {
 }
 
 type BadContentRequest struct {
-	ContentId int64 `json:"content_id"`
+	ContentId int64 `json:"id"`
 }
 
 func BadContent(c *gin.Context) {
@@ -95,13 +124,39 @@ func BadContent(c *gin.Context) {
 		return
 	}
 
-	bad := new(model.ContentBad)
-	bad.ContentId = req.ContentId
-	bad.UserId = uu.Id
-	ok, err := bad.Exist()
+	content := new(model.Content)
+	content.Id = req.ContentId
+	ok, err := content.GetByRaw()
 	if err != nil {
 		flog.Log.Errorf("BadContent err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok {
+		flog.Log.Errorf("BadContent err: %s", "content not found")
+		resp.Error = Error(ContentNotFound, "")
+		return
+	}
+
+	if content.Status != 0 || content.Version == 0 {
+		flog.Log.Errorf("BadContent err: %s", "content status not 0 or not publish")
+		if content.Status == 2 {
+			resp.Error = Error(ContentBanPermit, "")
+		} else {
+			resp.Error = Error(ContentNotFound, "")
+		}
+		return
+	}
+
+	bad := new(model.ContentBad)
+	bad.ContentId = req.ContentId
+	bad.UserId = uu.Id
+	ok, err = bad.Exist()
+	if err != nil {
+		flog.Log.Errorf("BadContent err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
 	}
 
 	if ok {
@@ -122,11 +177,13 @@ func BadContent(c *gin.Context) {
 	if ok {
 		resp.Data = "-"
 	} else {
-		err = cc.Ban(BadTime)
-		if err != nil {
-			flog.Log.Errorf("BadContent ban err: %s", err.Error())
-		}
 
+		if AutoBan {
+			err = cc.Ban(BadTime)
+			if err != nil {
+				flog.Log.Errorf("BadContent ban err: %s", err.Error())
+			}
+		}
 		resp.Data = "+"
 	}
 	return

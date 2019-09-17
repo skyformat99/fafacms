@@ -50,6 +50,8 @@ const (
 	ContentsAreInDifferentNode        = 110005
 	ContentHistoryNotFound            = 110006
 	ContentCanNotDelete               = 110007
+	CommentNotFound                   = 110008
+	CommentBanPermit                  = 110009
 	AddUserCacheError                 = 120000
 	DeleteUserCacheError              = 120001
 	RefreshUserCacheError             = 120002
@@ -122,6 +124,8 @@ var ErrorMap = map[int]string{
 	ContentsAreInDifferentNode:        "contents are in different node",
 	ContentHistoryNotFound:            "content history can not found",
 	ContentCanNotDelete:               "content can not delete for content not in rubbish",
+	CommentNotFound:                   "comment not found",
+	CommentBanPermit:                  "comment ban permit",
 	SystemProblem:                     "system problem",
 	DbNotFound:                        "db not found",
 	DbRepeat:                          "db repeat data",

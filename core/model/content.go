@@ -458,7 +458,7 @@ func (c *ContentCool) Exist() (ok bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	if num > 1 {
+	if num >= 1 {
 		return true, nil
 	}
 
@@ -478,16 +478,26 @@ func (c *ContentCool) Create() (err error) {
 		return err
 	}
 
-	_, err = se.InsertOne(c)
+	num, err := se.InsertOne(c)
 	if err != nil {
 		se.Rollback()
 		return err
 	}
 
-	_, err = se.Where("id=?", c.ContentId).Incr("cool").Update(new(Content))
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.ContentId).Incr("cool").Update(new(Content))
 	if err != nil {
 		se.Rollback()
 		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
 	}
 
 	err = se.Commit()
@@ -508,16 +518,26 @@ func (c *ContentCool) Delete() (err error) {
 		return err
 	}
 
-	_, err = se.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Delete(new(ContentCool))
+	num, err := se.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Delete(new(ContentCool))
 	if err != nil {
 		se.Rollback()
 		return err
 	}
 
-	_, err = se.Where("id=?", c.ContentId).And("cool>=?", 1).Decr("cool").Update(new(Content))
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.ContentId).And("cool>=?", 1).Decr("cool").Update(new(Content))
 	if err != nil {
 		se.Rollback()
 		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
 	}
 
 	err = se.Commit()
@@ -536,7 +556,7 @@ func (c *ContentBad) Exist() (ok bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	if num > 1 {
+	if num >= 1 {
 		return true, nil
 	}
 
@@ -555,16 +575,26 @@ func (c *ContentBad) Create() (err error) {
 		return err
 	}
 
-	_, err = se.InsertOne(c)
+	num, err := se.InsertOne(c)
 	if err != nil {
 		se.Rollback()
 		return err
 	}
 
-	_, err = se.Where("id=?", c.ContentId).Incr("bad").Update(new(Content))
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.ContentId).Incr("bad").Update(new(Content))
 	if err != nil {
 		se.Rollback()
 		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
 	}
 
 	err = se.Commit()
@@ -585,16 +615,26 @@ func (c *ContentBad) Delete() (err error) {
 		return err
 	}
 
-	_, err = se.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Delete(new(ContentBad))
+	num, err := se.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Delete(new(ContentBad))
 	if err != nil {
 		se.Rollback()
 		return err
 	}
 
-	_, err = se.Where("id=?", c.ContentId).And("bad>=?", 1).Decr("bad").Update(new(Content))
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.ContentId).And("bad>=?", 1).Decr("bad").Update(new(Content))
 	if err != nil {
 		se.Rollback()
 		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
 	}
 
 	err = se.Commit()

@@ -51,6 +51,7 @@ var (
 	timeZone int64
 
 	// 举报次数，大于此次数自动违禁
+	autoBan bool
 	banTime int64
 )
 
@@ -60,6 +61,7 @@ func init() {
 	// 默认读取本路径下 ./config.json 配置
 	flag.StringVar(&configFile, "config", "./config.json", "config file")
 	flag.Int64Var(&timeZone, "time_zone", 8, "time zone offset the utc")
+	flag.BoolVar(&autoBan, "auto_ban", false, "auto ban the content or comment")
 	flag.Int64Var(&banTime, "ban_time", 10, "how much time to bad a content or comment will ban it")
 
 	// 正式部署时，请全部设置为 false
@@ -116,6 +118,7 @@ func main() {
 	controllers.AuthDebug = canSkipAuth
 	controllers.TimeZone = timeZone
 	controllers.BadTime = banTime
+	controllers.AutoBan = autoBan
 	model.HistoryRecord = historyRecord
 
 	var err error
@@ -166,7 +169,7 @@ func main() {
 			model.Comment{},        // 评论表
 			model.CommentCool{},    // 评论点赞表
 			model.CommentBad{},     // 评论举报表
-			model.Message{},        // 站内信表
+			//model.Message{},        // 站内信表
 			//model.Log{},            // 日志表
 		})
 	}

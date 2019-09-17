@@ -1,5 +1,9 @@
 package model
 
+import (
+	"errors"
+)
+
 type Comment struct {
 	Id                int64  `json:"id" xorm:"bigint pk autoincr"`
 	UserId            int64  `json:"user_id" xorm:"bigint index"`
@@ -28,4 +32,49 @@ type CommentBad struct {
 	UserId     int64 `json:"user_id" xorm:"bigint index(gr)"`
 	CommentId  int64 `json:"comment_id,omitempty" xorm:"bigint index(gr)"`
 	CreateTime int64 `json:"create_time"`
+}
+
+func (c *Comment) InsertOne() error {
+	se := FafaRdb.Client.NewSession()
+	err := se.Begin()
+	if err != nil {
+		return err
+	}
+
+	num, err := se.InsertOne(c)
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.ContentId).Incr("comment_num").Update(new(Content))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func (n *Comment) Get() (bool, error) {
+	if n.Id == 0 {
+		return false, errors.New("where is empty")
+	}
+	return FafaRdb.Client.Get(n)
 }

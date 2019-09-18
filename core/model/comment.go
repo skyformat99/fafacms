@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"time"
 )
 
 const (
@@ -27,7 +28,8 @@ type Comment struct {
 	Bad               int64  `json:"bad"`
 	CommentType       int    `json:"comment_type"`
 	CommentAnonymous  int    `json:"comment_anonymous"`
-	IsDelete int `json:"is_delete"`
+	IsDelete          int    `json:"is_delete,omitempty"`
+	DeleteTime        int64  `json:"delete_time,omitempty"`
 }
 
 type CommentCool struct {
@@ -82,9 +84,20 @@ func (c *Comment) InsertOne() error {
 	return nil
 }
 
-func (n *Comment) Get() (bool, error) {
-	if n.Id == 0 {
+func (c *Comment) Get() (bool, error) {
+	if c.Id == 0 {
 		return false, errors.New("where is empty")
 	}
-	return FafaRdb.Client.Get(n)
+	return FafaRdb.Client.Get(c)
+}
+
+func (c *Comment) Delete() (err error) {
+	if c.Id == 0 {
+		return errors.New("where is empty")
+	}
+
+	c.IsDelete = 1
+	c.DeleteTime = time.Now().Unix()
+	_, err = FafaRdb.Client.Where("id=?", c.Id).Cols("is_delete", "delete_time").Update(c)
+	return
 }

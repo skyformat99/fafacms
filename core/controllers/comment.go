@@ -203,11 +203,59 @@ func UpdateComment(c *gin.Context) {
 	}()
 }
 
+type DeleteCommentRequest struct {
+	CommentId int64 `json:"id"`
+}
+
 func DeleteComment(c *gin.Context) {
 	resp := new(Resp)
+	req := new(DeleteCommentRequest)
 	defer func() {
-		JSONL(c, 200, nil, resp)
+		JSONL(c, 200, req, resp)
 	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if req.CommentId == 0 {
+		flog.Log.Errorf("DeleteComment err: %s", "comment_id empty")
+		resp.Error = Error(ParasError, "comment_id empty")
+		return
+	}
+
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("DeleteComment err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	comment := new(model.Comment)
+	comment.Id = req.CommentId
+	comment.UserId = uu.Id
+	ok, err := comment.Get()
+	if err != nil {
+		flog.Log.Errorf("DeleteComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok || comment.IsDelete == 1 {
+		flog.Log.Errorf("DeleteComment err: %s", "comment not found")
+		resp.Error = Error(CommentNotFound, "")
+		return
+	}
+
+	err = comment.Delete()
+	if err != nil {
+		flog.Log.Errorf("DeleteComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	resp.Flag = true
 }
 
 func TakeComment(c *gin.Context) {

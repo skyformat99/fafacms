@@ -110,7 +110,7 @@ var (
 		"/content/admin/update/status": {"Update Content All Status", controllers.UpdateStatusOfContentAdmin, POST, true},           // 超级管理员修改文章，比如禁用或者逻辑删除/恢复文章
 		"/content/update/node":         {"Update Content Self Node", controllers.UpdateNodeOfContent, POST, false},                  // 更改内容的节点，顺便需要重新排序
 		"/content/update/top":          {"Update Content Self Top", controllers.UpdateTopOfContent, POST, false},                    // 设置内容的置顶与否
-		"/content/update/comment":      {"Update Content Self Comment", controllers.UpdateCommentOfContent, POST, false},            // 设置内容的置顶与否
+		"/content/update/comment":      {"Update Content Self Comment", controllers.UpdateCommentOfContent, POST, false},            // 设置内容可以评论与否
 		"/content/update/password":     {"Update Content Self Password", controllers.UpdatePasswordOfContent, POST, false},          // 更改内容的密码保护
 		"/content/update/info":         {"Update Content Self Info", controllers.UpdateInfoOfContent, POST, false},                  // 更新内容标题和内容
 		"/content/sort":                {"Sort Content Self", controllers.SortContent, POST, false},                                 // 对内容进行拖曳排序

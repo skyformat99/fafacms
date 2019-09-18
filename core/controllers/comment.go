@@ -77,6 +77,11 @@ func CreateComment(c *gin.Context) {
 		}
 
 		if content.Status == 0 && content.Version > 0 {
+			if content.CloseComment == 1 {
+				flog.Log.Errorf("CreateComment err: %s", "content can not comment")
+				resp.Error = Error(CommentClose, "")
+				return
+			}
 			cm := new(model.Comment)
 			cm.ContentId = content.Id
 			cm.ContentUserId = content.UserId
@@ -84,7 +89,7 @@ func CreateComment(c *gin.Context) {
 			cm.Describe = req.Body
 			cm.CommentType = model.CommentTypeOfContent
 			if req.Anonymous {
-				cm.CommentAnonymous = 1
+				cm.CommentAnonymous = model.CommentAnonymous
 			}
 			err = cm.InsertOne()
 			if err != nil {
@@ -116,7 +121,7 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	if !ok {
+	if !ok || targetComment.IsDelete == 1 {
 		flog.Log.Errorf("CreateComment err: %s", "comment not found")
 		resp.Error = Error(CommentNotFound, "")
 		return
@@ -143,13 +148,19 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	if content.Status != 0 && content.Version > 0 {
+	if content.Status != 0 || content.Version == 0 {
 		flog.Log.Errorf("CreateComment err: %s", "content status not 0 or not publish")
 		if content.Status == 2 {
 			resp.Error = Error(ContentBanPermit, "")
 		} else {
 			resp.Error = Error(ContentNotFound, "")
 		}
+		return
+	}
+
+	if content.CloseComment == 1 {
+		flog.Log.Errorf("CreateComment err: %s", "content can not comment")
+		resp.Error = Error(CommentClose, "")
 		return
 	}
 
@@ -171,7 +182,7 @@ func CreateComment(c *gin.Context) {
 	}
 
 	if req.Anonymous {
-		newComment.CommentAnonymous = 1
+		newComment.CommentAnonymous = model.CommentAnonymous
 	}
 
 	err = newComment.InsertOne()

@@ -17,7 +17,7 @@ type CreateContentRequest struct {
 	ImagePath    string `json:"image_path" validate:"omitempty"`          // picture
 	NodeId       int64  `json:"node_id"`                                  // node
 	Password     string `json:"password"`                                 // if not empty will need a password in front end
-	CloseComment int    `json:"close_comment" validate:"oneof=0 1"`       // 0 stand for close comment, 1 can comment
+	CloseComment int    `json:"close_comment" validate:"oneof=0 1"`       // 0 stand for open comment, 1 close comment
 }
 
 func CreateContent(c *gin.Context) {

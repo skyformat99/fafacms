@@ -52,6 +52,7 @@ const (
 	ContentCanNotDelete               = 110007
 	CommentNotFound                   = 110008
 	CommentBanPermit                  = 110009
+	CommentClose                      = 110010
 	AddUserCacheError                 = 120000
 	DeleteUserCacheError              = 120001
 	RefreshUserCacheError             = 120002
@@ -126,6 +127,7 @@ var ErrorMap = map[int]string{
 	ContentCanNotDelete:               "content can not delete for content not in rubbish",
 	CommentNotFound:                   "comment not found",
 	CommentBanPermit:                  "comment ban permit",
+	CommentClose:                      "content close comment",
 	SystemProblem:                     "system problem",
 	DbNotFound:                        "db not found",
 	DbRepeat:                          "db repeat data",

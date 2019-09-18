@@ -21,7 +21,7 @@ type Content struct {
 	Describe         string `json:"describe" xorm:"TEXT"`
 	PreDescribe      string `json:"pre_describe" xorm:"TEXT"`
 	PreFlush         int    `json:"pre_flush" xorm:"not null comment('1 flush') TINYINT(1)"`
-	CloseComment     int    `json:"close_comment" xorm:"not null comment('0 close, 1 open, 2 direct open') TINYINT(1)"`
+	CloseComment     int    `json:"close_comment" xorm:"not null comment('0 open, 1 close') TINYINT(1)"`
 	Version          int    `json:"version"`
 	CreateTime       int64  `json:"create_time"`
 	UpdateTime       int64  `json:"update_time,omitempty"`

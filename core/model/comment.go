@@ -27,6 +27,7 @@ type Comment struct {
 	Bad               int64  `json:"bad"`
 	CommentType       int    `json:"comment_type"`
 	CommentAnonymous  int    `json:"comment_anonymous"`
+	IsDelete int `json:"is_delete"`
 }
 
 type CommentCool struct {

@@ -17,6 +17,7 @@ type CreateCommentRequest struct {
 	CommentId   int64  `json:"comment_id"`
 	IsToComment bool   `json:"is_to_comment"`
 	Body        string `json:"body"`
+	Anonymous   bool   `json:"anonymous"`
 }
 
 func CreateComment(c *gin.Context) {
@@ -81,6 +82,10 @@ func CreateComment(c *gin.Context) {
 			cm.ContentUserId = content.UserId
 			cm.UserId = uu.Id
 			cm.Describe = req.Body
+			cm.CommentType = model.CommentTypeOfContent
+			if req.Anonymous {
+				cm.CommentAnonymous = 1
+			}
 			err = cm.InsertOne()
 			if err != nil {
 				flog.Log.Errorf("CreateComment err: %s", err.Error())
@@ -153,14 +158,20 @@ func CreateComment(c *gin.Context) {
 	newComment.ContentUserId = content.UserId
 	newComment.UserId = uu.Id
 	newComment.Describe = req.Body
-	if targetComment.RootCommentId == 0 {
+	if targetComment.CommentType == model.CommentTypeOfContent {
 		newComment.RootCommentId = targetComment.Id
 		newComment.RootCommentUserId = targetComment.UserId
+		newComment.CommentType = model.CommentTypeOfRootComment
 	} else {
 		newComment.CommentId = targetComment.Id
 		newComment.CommentUserId = targetComment.UserId
 		newComment.RootCommentId = targetComment.RootCommentId
 		newComment.RootCommentUserId = targetComment.RootCommentUserId
+		newComment.CommentType = model.CommentTypeOfComment
+	}
+
+	if req.Anonymous {
+		newComment.CommentAnonymous = 1
 	}
 
 	err = newComment.InsertOne()

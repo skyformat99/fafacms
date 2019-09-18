@@ -4,6 +4,13 @@ import (
 	"errors"
 )
 
+const (
+	CommentTypeOfContent     = 0
+	CommentTypeOfRootComment = 1
+	CommentTypeOfComment     = 2
+	CommentAnonymous         = 1
+)
+
 type Comment struct {
 	Id                int64  `json:"id" xorm:"bigint pk autoincr"`
 	UserId            int64  `json:"user_id" xorm:"bigint index"`
@@ -18,6 +25,8 @@ type Comment struct {
 	Status            int    `json:"status" xorm:"not null comment('0 normal, 1 ban') TINYINT(1) index"`
 	Cool              int64  `json:"cool"`
 	Bad               int64  `json:"bad"`
+	CommentType       int    `json:"comment_type"`
+	CommentAnonymous  int    `json:"comment_anonymous"`
 }
 
 type CommentCool struct {

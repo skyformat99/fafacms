@@ -40,6 +40,12 @@ func CreateContent(c *gin.Context) {
 		return
 	}
 
+	if len(req.Describe) == 0 {
+		flog.Log.Errorf("CreateContent err: %s", "describe empty")
+		resp.Error = Error(ParasError, "describe empty")
+		return
+	}
+
 	uu, err := GetUserSession(c)
 	if err != nil {
 		flog.Log.Errorf("CreateContent err: %s", err.Error())
@@ -714,6 +720,12 @@ func UpdateInfoOfContent(c *gin.Context) {
 	if err != nil {
 		flog.Log.Errorf("UpdateInfoOfContent err: %s", err.Error())
 		resp.Error = Error(ParasError, err.Error())
+		return
+	}
+
+	if len(req.Describe) == 0 {
+		flog.Log.Errorf("UpdateInfoOfContent err: %s", "describe empty")
+		resp.Error = Error(ParasError, "describe empty")
 		return
 	}
 

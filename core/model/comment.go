@@ -36,6 +36,7 @@ type CommentCool struct {
 	Id         int64 `json:"id" xorm:"bigint pk autoincr"`
 	UserId     int64 `json:"user_id" xorm:"bigint index(gr)"`
 	CommentId  int64 `json:"comment_id,omitempty" xorm:"bigint index(gr)"`
+	ContentId  int64 `json:"content_id" xorm:"bigint index"`
 	CreateTime int64 `json:"create_time"`
 }
 
@@ -43,6 +44,7 @@ type CommentBad struct {
 	Id         int64 `json:"id" xorm:"bigint pk autoincr"`
 	UserId     int64 `json:"user_id" xorm:"bigint index(gr)"`
 	CommentId  int64 `json:"comment_id,omitempty" xorm:"bigint index(gr)"`
+	ContentId  int64 `json:"content_id" xorm:"bigint index"`
 	CreateTime int64 `json:"create_time"`
 }
 

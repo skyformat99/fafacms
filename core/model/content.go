@@ -421,6 +421,31 @@ func (c *Content) Delete() error {
 		return err
 	}
 
+	if _, err := session.Where("content_id=?", c.Id).Delete(new(ContentBad)); err != nil {
+		session.Rollback()
+		return err
+	}
+
+	if _, err := session.Where("content_id=?", c.Id).Delete(new(ContentCool)); err != nil {
+		session.Rollback()
+		return err
+	}
+
+	if _, err := session.Where("content_id=?", c.Id).Delete(new(Comment)); err != nil {
+		session.Rollback()
+		return err
+	}
+
+	if _, err := session.Where("content_id=?", c.Id).Delete(new(CommentCool)); err != nil {
+		session.Rollback()
+		return err
+	}
+
+	if _, err := session.Where("content_id=?", c.Id).Delete(new(CommentBad)); err != nil {
+		session.Rollback()
+		return err
+	}
+
 	if err := session.Commit(); err != nil {
 		return err
 	}

@@ -49,6 +49,7 @@ type People struct {
 	ActivateTimeInt int64  `json:"activate_time_int,omitempty"`
 	LoginTime       string `json:"login_time,omitempty"`
 	LoginTimeInt    int64  `json:"login_time_int,omitempty"`
+	IsInBlack       bool   `json:"is_in_black"`
 }
 
 type PeoplesRequest struct {
@@ -78,7 +79,7 @@ func Peoples(c *gin.Context) {
 	session := model.FafaRdb.Client.NewSession()
 	defer session.Close()
 
-	session.Table(new(model.User)).Where("1=1").And("status=?", 1).And("name!=?", "admin")
+	session.Table(new(model.User)).Where("1=1").And("status!=?", 0).And("name!=?", "admin")
 
 	countSession := session.Clone()
 	defer countSession.Close()
@@ -128,6 +129,9 @@ func Peoples(c *gin.Context) {
 			p.LoginTime = GetSecond2DateTimes(v.LoginTime)
 		}
 
+		if v.Status == 2 {
+			p.IsInBlack = true
+		}
 		p.Email = v.Email
 		p.Github = v.Github
 		p.Name = v.Name
@@ -191,7 +195,7 @@ func NodesInfo(c *gin.Context) {
 
 	if req.UserId == 0 && req.UserName == "" {
 		flog.Log.Errorf("ListNode err:%s", "")
-		resp.Error = Error(ParasError, "where is empty")
+		resp.Error = Error(ParasError, "user info empty")
 		return
 	}
 
@@ -285,7 +289,6 @@ type NodeInfoRequest struct {
 	ListSon  bool   `json:"list_son"`
 }
 
-// 列出一个节点以及他的儿子们
 func NodeInfo(c *gin.Context) {
 	resp := new(Resp)
 
@@ -299,10 +302,18 @@ func NodeInfo(c *gin.Context) {
 		return
 	}
 
-	if req.UserId == 0 && req.UserName == "" {
-		flog.Log.Errorf("Node err:%s", "")
-		resp.Error = Error(ParasError, "where is empty")
+	if req.Id == 0 && req.Seo == "" {
+		flog.Log.Errorf("Node err: %s", "content node id or seo empty")
+		resp.Error = Error(ParasError, "content node id or seo empty")
 		return
+	}
+
+	if req.Id == 0 && req.Seo != "" {
+		if req.UserId == 0 && req.UserName == "" {
+			flog.Log.Errorf("Node err: %s", "content node seo exist but user info empty")
+			resp.Error = Error(ParasError, "content node seo exist but user info empty")
+			return
+		}
 	}
 
 	session := model.FafaRdb.Client.NewSession()
@@ -318,21 +329,12 @@ func NodeInfo(c *gin.Context) {
 		session.And("user_name=?", req.UserName)
 	}
 
-	isOne := false
 	if req.Id != 0 {
-		isOne = true
 		session.And("id=?", req.Id)
 	}
 
 	if req.Seo != "" {
-		isOne = true
 		session.And("seo=?", req.Seo)
-	}
-
-	if !isOne {
-		flog.Log.Errorf("Node err:%s", "id or seo empty")
-		resp.Error = Error(ParasError, "id or seo empty")
-		return
 	}
 
 	v := new(model.ContentNode)
@@ -370,7 +372,7 @@ func NodeInfo(c *gin.Context) {
 	// 是顶层且需要列出儿子
 	if f.Level == 0 && req.ListSon {
 		ns := make([]model.ContentNode, 0)
-		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).Find(&ns)
+		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).And("status=?", 0).Find(&ns)
 		if err != nil {
 			flog.Log.Errorf("Node err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -428,7 +430,7 @@ func UserInfo(c *gin.Context) {
 	user := new(model.User)
 	user.Id = req.Id
 	user.Name = req.Name
-	exist, err := model.FafaRdb.Client.Where("status=?", 1).Get(user)
+	exist, err := model.FafaRdb.Client.Where("status!=?", 0).Get(user)
 	if err != nil {
 		flog.Log.Errorf("UserInfo err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -447,6 +449,10 @@ func UserInfo(c *gin.Context) {
 	p.Describe = v.Describe
 	p.CreateTime = GetSecond2DateTimes(v.CreateTime)
 	p.CreateTimeInt = v.CreateTime
+
+	if v.Status == 2 {
+		p.IsInBlack = true
+	}
 
 	p.UpdateTimeInt = v.UpdateTime
 	if v.UpdateTime > 0 {
@@ -594,6 +600,7 @@ type ContentsX struct {
 	Bad                 int64      `json:"bad"`
 	Cool                int64      `json:"cool"`
 	CommentNum          int64      `json:"comment_num"`
+	IsBan               bool       `json:"is_ban"`
 }
 
 type ContentsResponse struct {
@@ -715,6 +722,10 @@ func Contents(c *gin.Context) {
 		temp.CommentNum = c.CommentNum
 		temp.Bad = c.Bad
 		temp.Cool = c.Cool
+		if c.Status == 2 {
+			temp.IsBan = true
+		}
+
 		if c.Password != "" {
 			temp.IsLock = true
 		}
@@ -758,15 +769,23 @@ func Content(c *gin.Context) {
 	var validate = validator.New()
 	err := validate.Struct(req)
 	if err != nil {
-		flog.Log.Errorf("TakeContent err: %s", err.Error())
+		flog.Log.Errorf("Content err: %s", err.Error())
 		resp.Error = Error(ParasError, err.Error())
 		return
 	}
 
 	if req.Id == 0 && req.Seo == "" {
-		flog.Log.Errorf("TakeContent err: %s", "content id empty")
-		resp.Error = Error(ParasError, "")
+		flog.Log.Errorf("Content err: %s", "content id or seo empty")
+		resp.Error = Error(ParasError, "content id or seo empty")
 		return
+	}
+
+	if req.Id == 0 && req.Seo != "" {
+		if req.UserId == 0 && req.UserName == "" {
+			flog.Log.Errorf("Content err: %s", "content seo exist but user info empty")
+			resp.Error = Error(ParasError, "content seo exist but user info empty")
+			return
+		}
 	}
 
 	content := new(model.Content)
@@ -776,13 +795,13 @@ func Content(c *gin.Context) {
 	content.Seo = req.Seo
 	exist, err := content.GetByRaw()
 	if err != nil {
-		flog.Log.Errorf("TakeContent err: %s", err.Error())
+		flog.Log.Errorf("Content err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
 
 	if !exist {
-		flog.Log.Errorf("TakeContent err: %s", "content not found")
+		flog.Log.Errorf("Content err: %s", "content not found")
 		resp.Error = Error(ContentNotFound, "")
 		return
 	}
@@ -790,23 +809,23 @@ func Content(c *gin.Context) {
 	if content.Status == 0 {
 
 	} else if content.Status == 2 {
-		flog.Log.Errorf("TakeContent err: %s", "content ban")
+		flog.Log.Errorf("Content err: %s", "content ban")
 		resp.Error = Error(ContentBanPermit, "")
 		return
 	} else {
-		flog.Log.Errorf("TakeContent err: %s", "content not found for it hide")
+		flog.Log.Errorf("Content err: %s", "content not found for it hide")
 		resp.Error = Error(ContentNotFound, "")
 		return
 	}
 
 	if content.Version == 0 {
-		flog.Log.Errorf("TakeContent err: %s", "content not found for it not publish")
+		flog.Log.Errorf("Content err: %s", "content not found for it not publish")
 		resp.Error = Error(ContentNotFound, "")
 		return
 	}
 
 	if content.Password != "" && content.Password != req.Password {
-		flog.Log.Errorf("TakeContent err: %s", "content password")
+		flog.Log.Errorf("Content err: %s", "content password")
 		resp.Error = Error(ContentPasswordWrong, "")
 		return
 	}
@@ -847,7 +866,7 @@ func Content(c *gin.Context) {
 		pre, next, err := cxx.GetBrotherContent()
 
 		if err != nil {
-			flog.Log.Errorf("TakeContent err: %s", err.Error())
+			flog.Log.Errorf("Content err: %s", err.Error())
 			resp.Error = Error(DBError, err.Error())
 			return
 		}

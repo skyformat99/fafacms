@@ -26,7 +26,7 @@ var (
 		"/": {"Home", controllers.Home, GP, false},
 
 		"/u":         {"List Peoples", controllers.Peoples, GP, false},         // 列出用户
-		"/u/node":    {"List User Nodes One", controllers.NodeInfo, GP, false}, // 查找某用户下的某一个节点
+		"/u/node":    {"List User Nodes One", controllers.NodeInfo, GP, false}, // 查找某一个节点
 		"/u/nodes":   {"List User Nodes", controllers.NodesInfo, GP, false},    // 列出某用户下的节点
 		"/u/info":    {"List User Info", controllers.UserInfo, GP, false},      // 获取某用户信息
 		"/u/count":   {"Count User Content", controllers.UserCount, GP, false}, // 统计某用户文章情况（某用户可留空）
@@ -136,9 +136,8 @@ var (
 		"/content/bad":  {"Bad the Content Self", controllers.BadContent, GP, false},   // 举报内容
 
 		"/comment/create":              {"Create the Comment Self", controllers.CreateComment, POST, false},    // 创建评论
-		"/comment/delete":              {"Delete the Comment Self", controllers.DeleteComment, POST, false},    // 删除评论
+		"/comment/delete":              {"Delete the Comment Self", controllers.DeleteComment, POST, false},    // 删除评论，逻辑删除
 		"/comment/take":                {"Take the Comment Self", controllers.TakeComment, GP, false},          // 获取评论
-		"/comment/list":                {"List the Comment Self", controllers.ListComment, GP, false},          // 列出评论
 		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},          // 管理员列出评论
 		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.ListComment, GP, true}, // 管理员评论违禁处理
 		"/comment/cool":                {"Cool the Comment Self", controllers.CreateComment, GP, false},        // 点赞评论

@@ -86,6 +86,7 @@ func CreateComment(c *gin.Context) {
 			cm.ContentId = content.Id
 			cm.ContentUserId = content.UserId
 			cm.UserId = uu.Id
+			cm.UserName = uu.Name
 			cm.Describe = req.Body
 			cm.CommentType = model.CommentTypeOfContent
 			if req.Anonymous {
@@ -172,12 +173,15 @@ func CreateComment(c *gin.Context) {
 	if targetComment.CommentType == model.CommentTypeOfContent {
 		newComment.RootCommentId = targetComment.Id
 		newComment.RootCommentUserId = targetComment.UserId
+		newComment.RootCommentUserName = targetComment.UserName
 		newComment.CommentType = model.CommentTypeOfRootComment
 	} else {
 		newComment.CommentId = targetComment.Id
 		newComment.CommentUserId = targetComment.UserId
+		newComment.CommentUserName = targetComment.UserName
 		newComment.RootCommentId = targetComment.RootCommentId
 		newComment.RootCommentUserId = targetComment.RootCommentUserId
+		newComment.RootCommentUserName = targetComment.RootCommentUserName
 		newComment.CommentType = model.CommentTypeOfComment
 	}
 
@@ -258,11 +262,82 @@ func DeleteComment(c *gin.Context) {
 	resp.Flag = true
 }
 
+type TakeCommentRequest struct {
+	CommentId int64 `json:"id"`
+}
+
 func TakeComment(c *gin.Context) {
 	resp := new(Resp)
+	req := new(TakeCommentRequest)
 	defer func() {
 		JSONL(c, 200, nil, resp)
 	}()
+
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if req.CommentId == 0 {
+		flog.Log.Errorf("TakeComment err: %s", "comment_id empty")
+		resp.Error = Error(ParasError, "comment_id empty")
+		return
+	}
+
+	comment := new(model.Comment)
+	comment.Id = req.CommentId
+	ok, err := comment.Get()
+	if err != nil {
+		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok || comment.IsDelete == 1 {
+		flog.Log.Errorf("TakeComment err: %s", "comment not found")
+		resp.Error = Error(CommentNotFound, "")
+		return
+	}
+
+	users := make(map[int64]*model.User)
+	if comment.CommentAnonymous != model.CommentAnonymous {
+		user := new(model.User)
+		user.Id = comment.UserId
+		ok, err := user.GetRaw()
+		if err != nil {
+			flog.Log.Errorf("TakeComment err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+
+		if ok {
+			comment.HelperUserNickName = user.NickName
+			users[comment.UserId] = user
+		}
+	}
+
+	content := new(model.Content)
+	content.Id = comment.ContentId
+	ok, err = content.GetByRaw()
+	if err != nil {
+		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if ok {
+		comment.HelperContentTitle = content.Title
+	}
+
+	if comment.Status == model.CommentTypeOfRootComment {
+		cm := new(model.Comment)
+		cm.ContentId = comment.RootCommentId
+	}
+
 }
 
 func ListComment(c *gin.Context) {

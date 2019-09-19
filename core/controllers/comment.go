@@ -318,6 +318,8 @@ func TakeComment(c *gin.Context) {
 			comment.HelperUserNickName = user.NickName
 			users[comment.UserId] = user
 		}
+	} else {
+		comment.HelperUserNickName = ""
 	}
 
 	content := new(model.Content)

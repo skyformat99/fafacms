@@ -65,6 +65,12 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
+	if req.NickName == model.AnonymousUser {
+		flog.Log.Errorf("RegisterUser err: %s", "can not be anonymous name")
+		resp.Error = Error(NickNameAlreadyBeUsed, "")
+		return
+	}
+
 	u.Name = req.Name
 	repeat, err := u.IsNameRepeat()
 	if err != nil {
@@ -75,6 +81,19 @@ func RegisterUser(c *gin.Context) {
 	if repeat {
 		flog.Log.Errorf("RegisterUser err: %s", "name already use by other")
 		resp.Error = Error(UserNameAlreadyBeUsed, "")
+		return
+	}
+
+	u.NickName = req.NickName
+	repeat, err = u.IsNickNameRepeat()
+	if err != nil {
+		flog.Log.Errorf("RegisterUser err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+	if repeat {
+		flog.Log.Errorf("RegisterUser err: %s", "nickname already use by other")
+		resp.Error = Error(NickNameAlreadyBeUsed, "")
 		return
 	}
 
@@ -96,7 +115,6 @@ func RegisterUser(c *gin.Context) {
 	u.ActivateCode = util.GetGUID()
 	u.ActivateCodeExpired = time.Now().Add(5 * time.Minute).Unix()
 	u.Describe = req.Describe
-	u.NickName = req.NickName
 	u.Password = req.Password
 	u.Gender = req.Gender
 	u.WeChat = req.WeChat
@@ -160,6 +178,12 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	if req.NickName == model.AnonymousUser {
+		flog.Log.Errorf("CreateUser err: %s", "can not be anonymous name")
+		resp.Error = Error(NickNameAlreadyBeUsed, "")
+		return
+	}
+
 	u.Name = req.Name
 	repeat, err := u.IsNameRepeat()
 	if err != nil {
@@ -170,6 +194,19 @@ func CreateUser(c *gin.Context) {
 	if repeat {
 		flog.Log.Errorf("CreateUser err: %s", "name already use by other")
 		resp.Error = Error(UserNameAlreadyBeUsed, "")
+		return
+	}
+
+	u.NickName = req.NickName
+	repeat, err = u.IsNickNameRepeat()
+	if err != nil {
+		flog.Log.Errorf("CreateUser err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+	if repeat {
+		flog.Log.Errorf("CreateUser err: %s", "nickname already use by other")
+		resp.Error = Error(NickNameAlreadyBeUsed, "")
 		return
 	}
 
@@ -527,7 +564,6 @@ type UpdateUserRequest struct {
 	ImagePath string `json:"image_path"`
 }
 
-// 用户自己修改自己的信息
 func UpdateUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(UpdateUserRequest)
@@ -556,11 +592,24 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	uuu := new(model.User)
+	uuu.Id = uu.Id
+	ok, err := uuu.GetRaw()
+	if err != nil {
+		flog.Log.Errorf("UpdateUser err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok {
+		flog.Log.Errorf("UpdateUser err: %s", "user not found")
+		resp.Error = Error(UserNotFound, "")
+		return
+	}
+
 	u := new(model.User)
 	u.Id = uu.Id
-
-	// if image not empty
-	if req.ImagePath != "" {
+	if req.ImagePath != "" && req.ImagePath != uuu.HeadPhoto {
 		u.HeadPhoto = req.ImagePath
 		p := new(model.File)
 		p.Url = req.ImagePath
@@ -578,8 +627,37 @@ func UpdateUser(c *gin.Context) {
 		}
 	}
 
+	if req.NickName == model.AnonymousUser {
+		flog.Log.Errorf("UpdateUser err: %s", "can not be anonymous name")
+		resp.Error = Error(NickNameAlreadyBeUsed, "")
+		return
+	}
+
+	if req.NickName != "" && req.NickName != uuu.NickName {
+		if uuu.NickNameUpdateTime != 0 {
+			passTime := time.Now().Unix() - uuu.NickNameUpdateTime
+			if passTime < 15*24*3600 {
+				flog.Log.Errorf("UpdateUser err: %s", "nickname can not change time not reach")
+				resp.Error = Error(NickNameCanNotChangeForTimeNotReach, fmt.Sprintf("remain %d days", passTime/(24*3600)))
+				return
+			}
+		}
+		u.NickName = req.NickName
+		u.NickNameUpdateTime = time.Now().Unix()
+		repeat, err := u.IsNickNameRepeat()
+		if err != nil {
+			flog.Log.Errorf("UpdateUser err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+		if repeat {
+			flog.Log.Errorf("UpdateUser err: %s", "nickname already use by other")
+			resp.Error = Error(NickNameAlreadyBeUsed, "")
+			return
+		}
+	}
+
 	u.Describe = req.Describe
-	u.NickName = req.NickName
 	u.Gender = req.Gender
 	u.WeChat = req.WeChat
 	u.QQ = req.QQ
@@ -926,7 +1004,7 @@ func UpdateUserAdmin(c *gin.Context) {
 
 	uu := new(model.User)
 	uu.Id = req.Id
-	ok, err := uu.Exist()
+	ok, err := uu.GetRaw()
 	if err != nil {
 		flog.Log.Errorf("UpdateUserAdmin err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -940,7 +1018,26 @@ func UpdateUserAdmin(c *gin.Context) {
 	}
 
 	u := new(model.User)
-	u.NickName = req.NickName
+	if req.NickName == model.AnonymousUser {
+		flog.Log.Errorf("UpdateUserAdmin err: %s", "can not be anonymous name")
+		resp.Error = Error(NickNameAlreadyBeUsed, "")
+		return
+	}
+
+	if req.NickName != "" && req.NickName != uu.NickName {
+		u.NickName = req.NickName
+		repeat, err := u.IsNickNameRepeat()
+		if err != nil {
+			flog.Log.Errorf("UpdateUserAdmin err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+		if repeat {
+			flog.Log.Errorf("UpdateUserAdmin err: %s", "nickname already use by other")
+			resp.Error = Error(NickNameAlreadyBeUsed, "")
+			return
+		}
+	}
 	u.Id = req.Id
 	u.Password = req.Password
 

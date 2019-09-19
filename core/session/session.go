@@ -225,7 +225,7 @@ func (s *RedisSession) AddUser(id int64) (user *model.User, err error) {
 	user.ResetCodeExpired = 0
 	userKey := HashUserKey(user.Id, user.Name)
 	raw, _ := json.Marshal(user)
-	err = s.Set(userKey, raw, 48*3600)
+	err = s.Set(userKey, raw, 24*3600*7)
 	if err != nil {
 		return nil, err
 	}

@@ -10,6 +10,8 @@ const (
 	CommentTypeOfRootComment = 1
 	CommentTypeOfComment     = 2
 	CommentAnonymous         = 1
+
+	AnonymousUser = "匿名"
 )
 
 type Comment struct {

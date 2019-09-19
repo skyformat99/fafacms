@@ -10,7 +10,8 @@ import (
 type User struct {
 	Id                  int64  `json:"id" xorm:"bigint pk autoincr"`
 	Name                string `json:"name" xorm:"varchar(100) notnull unique"`
-	NickName            string `json:"nick_name" xorm:"varchar(100) notnull"`
+	NickName            string `json:"nick_name" xorm:"varchar(100) notnull unique"`
+	NickNameUpdateTime  int64  `json:"nick_name_update_time"`
 	Email               string `json:"email" xorm:"varchar(100) notnull unique"`
 	WeChat              string `json:"wechat" xorm:"varchar(100)"`
 	WeiBo               string `json:"weibo" xorm:"TEXT"`
@@ -85,6 +86,19 @@ func (u *User) IsNameRepeat() (bool, error) {
 		return false, errors.New("where is empty")
 	}
 	c, err := FafaRdb.Client.Table(u).Where("name=?", u.Name).Count()
+
+	if c >= 1 {
+		return true, nil
+	}
+
+	return false, err
+}
+
+func (u *User) IsNickNameRepeat() (bool, error) {
+	if u.NickName == "" {
+		return false, errors.New("where is empty")
+	}
+	c, err := FafaRdb.Client.Table(u).Where("nick_name=?", u.NickName).Count()
 
 	if c >= 1 {
 		return true, nil

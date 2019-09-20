@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// Parse the json into request struct
 func ParseJSON(c *gin.Context, req interface{}) *ErrorResp {
 	pc, _, line, _ := runtime.Caller(1)
 	f := runtime.FuncForPC(pc)
@@ -30,6 +31,7 @@ func ParseJSON(c *gin.Context, req interface{}) *ErrorResp {
 	return nil
 }
 
+// Log the json output
 func JSONL(c *gin.Context, code int, req interface{}, obj *Resp) {
 	if c.GetBool("skipLog") {
 		c.Render(code, render.JSON{Data: obj})
@@ -72,7 +74,7 @@ func JSONL(c *gin.Context, code int, req interface{}, obj *Resp) {
 
 	Log.Debugf("FaFa Monitor:%#v", record)
 
-	// 审计表不写了，打日志就行，不要拉慢速度
+	// log table not read fot it will slow the service
 	//_, err := model.FafaRdb.InsertOne(record)
 	//if err != nil {
 	//	Log.Errorf("insert log record:%s", err.Error())
@@ -82,48 +84,7 @@ func JSONL(c *gin.Context, code int, req interface{}, obj *Resp) {
 	c.Render(code, render.JSON{Data: obj})
 }
 
-// 不转发，仅仅审计
-func LogAlone(c *gin.Context, req interface{}, obj *Resp) {
-	record := new(model.Log)
-	record.Ip = c.ClientIP()
-	record.Url = c.Request.URL.Path
-	record.LogTime = time.Now().Unix()
-	record.Ua = c.Request.UserAgent()
-	record.UserId = c.GetInt("uid")
-	flag := obj.Flag
-	if !flag && obj.Error != nil {
-		errStr := obj.Error.Error()
-		errStrSplit := strings.Split(errStr, "|")
-		if len(errStrSplit) >= 2 {
-			record.ErrorId = errStrSplit[0]
-			record.ErrorMessage = strings.Join(errStrSplit[1:], "|")
-		}
-	}
-	record.Flag = flag
-
-	if req != nil {
-		in, _ := json.Marshal(req)
-		if len(in) > 0 {
-			record.In = string(in)
-		}
-	}
-
-	if obj != nil {
-		out, _ := json.Marshal(obj)
-		if len(out) > 0 {
-			record.Out = string(out)
-		}
-	}
-	cid := util.GetGUID()
-	record.Cid = cid
-	Log.Debugf("Monitor:%#v", record)
-	_, err := model.FafaRdb.InsertOne(record)
-	if err != nil {
-		Log.Errorf("insert log record:%s", err.Error())
-	}
-
-}
-
+// Just render the json
 func JSON(c *gin.Context, code int, obj *Resp) {
 	c.Render(code, render.JSON{Data: obj})
 }

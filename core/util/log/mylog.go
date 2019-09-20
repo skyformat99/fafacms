@@ -1,16 +1,13 @@
-/*
-	This source you can use!
-*/
 package log
 
 import "github.com/hunterhug/fafacms/core/util"
 
 func New(filename string) {
-	logsconf, err := util.ReadfromFile(filename)
+	logConf, err := util.ReadfromFile(filename)
 	if err != nil {
 		panic(err)
 	}
-	err = Init(string(logsconf))
+	err = Init(string(logConf))
 	if err != nil {
 		panic(err)
 	}

@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// 自定义日志
+// Our diy log config
 var jsconf = `
 {
   "UseShortFile": true,
@@ -50,7 +50,7 @@ var jsconf = `
 
 var Log *log.Logger
 
-// 初始化日志
+// Init the log
 func InitLog(logFile string) {
 	os.MkdirAll(filepath.Dir(logFile), 0777)
 	err := log.Init(fmt.Sprintf(jsconf, logFile))
@@ -61,7 +61,7 @@ func InitLog(logFile string) {
 	Log = log.Get("baseLogger")
 }
 
-// 设置日志级别
+// Set the log level
 func SetLogLevel(level string) {
 	if num, ok := log.LogLevelMap[strings.ToUpper(level)]; ok {
 		Log.SetLevel(num)

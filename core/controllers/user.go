@@ -30,7 +30,7 @@ type RegisterUserRequest struct {
 	ImagePath  string `json:"image_path"`
 }
 
-// 用户注册，任何人可以用唯一邮箱来注册
+// User register, anyone can use email register
 func RegisterUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(RegisterUserRequest)
@@ -38,7 +38,7 @@ func RegisterUser(c *gin.Context) {
 		JSONL(c, 200, req, resp)
 	}()
 
-	// 配置如果关闭注册，那么直接返回
+	// if close register direct return
 	if config.FaFaConfig.DefaultConfig.CloseRegister {
 		resp.Error = Error(CloseRegisterError, "")
 		return
@@ -57,7 +57,7 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// 唯一名字不能重复，作为子域名存在
+	// name can not repeat and prefix with @
 	u := new(model.User)
 	if strings.Contains(req.Name, "@") {
 		flog.Log.Errorf("RegisterUser err: %s", "@ can not be")
@@ -84,6 +84,7 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
+	// nickname also must unique
 	u.NickName = req.NickName
 	repeat, err = u.IsNickNameRepeat()
 	if err != nil {
@@ -97,7 +98,7 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// 邮箱不能重复
+	// email also
 	u.Email = req.Email
 	repeat, err = u.IsEmailRepeat()
 	if err != nil {
@@ -111,7 +112,7 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// 激活验证码
+	// activate code gen
 	u.ActivateCode = util.GetGUID()
 	u.ActivateCodeExpired = time.Now().Add(5 * time.Minute).Unix()
 	u.Describe = req.Describe
@@ -142,7 +143,7 @@ func RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// 如果不是调试模式，不应该返回信息
+	// if debug will return some info
 	if AuthDebug {
 		resp.Data = u
 	}
@@ -150,7 +151,7 @@ func RegisterUser(c *gin.Context) {
 	resp.Flag = true
 }
 
-// 创建用户，管理员权限
+// Create user, admin url
 func CreateUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(RegisterUserRequest)
@@ -270,7 +271,7 @@ type ActivateUserRequest struct {
 	Code  string `json:"code" validate:"required"`
 }
 
-// 用户自己激活自己
+// Activate by oneself
 func ActivateUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(ActivateUserRequest)
@@ -291,12 +292,12 @@ func ActivateUser(c *gin.Context) {
 		return
 	}
 
-	// 必须邮箱和激活码一起来
+	// email and activate code must together
 	u := new(model.User)
 	u.ActivateCode = req.Code
 	u.Email = req.Email
 
-	// 判断激活码是否存在
+	// whether exist
 	exist, err := u.IsActivateCodeExist()
 	if err != nil {
 		flog.Log.Errorf("ActivateUser err:%s", err.Error())
@@ -310,7 +311,7 @@ func ActivateUser(c *gin.Context) {
 		return
 	}
 
-	// 如果用户不是未激活状态
+	// has been activate direct return
 	if u.Status != 0 {
 		resp.Flag = true
 		return

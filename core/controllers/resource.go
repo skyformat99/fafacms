@@ -10,7 +10,6 @@ import (
 	"math"
 )
 
-// 列出资源
 type ListResourceRequest struct {
 	Id   int64    `json:"id"`
 	Name string   `json:"name"`
@@ -24,7 +23,6 @@ type ListResourceResponse struct {
 	PageHelp
 }
 
-// 列出资源
 func ListResource(c *gin.Context) {
 	resp := new(Resp)
 

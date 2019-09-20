@@ -52,7 +52,7 @@ type Comment struct {
 	RootCommentUserId         int64       `json:"-" xorm:"bigint index"`
 	RootCommentUserName       string      `json:"-" xorm:"xindex"`
 	HelperUser                *UserHelper `json:"user,omitempty" xorm:"-"`
-	HelperContentUser         *UserHelper `json:"comment_user,omitempty" xorm:"-"`
+	HelperContentUser         *UserHelper `json:"content_user,omitempty" xorm:"-"`
 	HelperRootCommentUser     *UserHelper `json:"root_comment_user,omitempty" xorm:"-"`
 	HelperCommentUser         *UserHelper `json:"comment_user,omitempty" xorm:"-"`
 	Describe                  string      `json:"describe" xorm:"TEXT"`

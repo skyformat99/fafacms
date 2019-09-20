@@ -46,7 +46,7 @@ func ListResource(c *gin.Context) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	// group list where prepare
@@ -151,7 +151,7 @@ func AssignResourceToGroup(c *gin.Context) {
 	}
 
 	if resourceNums > 0 {
-		num, err := model.FafaRdb.Client.Table(new(model.Resource)).In("id", req.Resources).Count()
+		num, err := model.FaFaRdb.Client.Table(new(model.Resource)).In("id", req.Resources).Count()
 		if err != nil {
 			flog.Log.Errorf("AssignGroupAndResource err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -165,7 +165,7 @@ func AssignResourceToGroup(c *gin.Context) {
 		}
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	err = session.Begin()

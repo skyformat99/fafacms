@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-//string to int
+// string to int
 func SI(s string) (i int, e error) {
 	i, e = strconv.Atoi(s)
 	return
 }
 
-//int to string
+// int to string
 func IS(i int) string {
 	return strconv.Itoa(i)
 }
@@ -45,7 +45,6 @@ func DivideStringList(files []string, num int) (map[int][]string, error) {
 	return split, nil
 }
 
-//字符串是否在字符串数组中
 func InArray(sa []string, a string) bool {
 	for _, v := range sa {
 		if a == v {

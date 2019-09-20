@@ -91,7 +91,7 @@ var AuthFilter = func(c *gin.Context) {
 	gr := new(model.GroupResource)
 	gr.GroupId = nowUser.GroupId
 	gr.ResourceId = resourceId
-	exist, err = model.FafaRdb.Client.Exist(gr)
+	exist, err = model.FaFaRdb.Client.Exist(gr)
 	if err != nil {
 		flog.Log.Errorf("filter err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())

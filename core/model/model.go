@@ -5,18 +5,18 @@ import (
 	"github.com/hunterhug/fafacms/core/util/rdb"
 )
 
-var FafaRdb *rdb.MyDb
+var FaFaRdb *rdb.MyDb
 
 func CreateTable(tables []interface{}) {
 	for _, table := range tables {
-		ok, err := FafaRdb.IsTableExist(table)
+		ok, err := FaFaRdb.IsTableExist(table)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
 		}
 		if !ok {
 			//  change the Charset
-			sess := FafaRdb.Client.NewSession()
+			sess := FaFaRdb.Client.NewSession()
 			sess.Charset("utf8mb4")
 			err = sess.CreateTable(table)
 			if err != nil {
@@ -27,7 +27,7 @@ func CreateTable(tables []interface{}) {
 
 			sess.Close()
 		} else {
-			sess := FafaRdb.Client.NewSession()
+			sess := FaFaRdb.Client.NewSession()
 			err = sess.Sync2(table)
 			if err != nil {
 				sess.Close()
@@ -36,12 +36,12 @@ func CreateTable(tables []interface{}) {
 			sess.Close()
 		}
 
-		err = FafaRdb.Client.CreateIndexes(table)
+		err = FaFaRdb.Client.CreateIndexes(table)
 		if err != nil {
 			fmt.Println(err.Error())
 			//continue
 		}
-		err = FafaRdb.Client.CreateUniques(table)
+		err = FaFaRdb.Client.CreateUniques(table)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue

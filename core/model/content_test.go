@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"github.com/hunterhug/fafacms/core/config"
 	"github.com/hunterhug/fafacms/core/util/rdb"
 	"testing"
 )
@@ -22,7 +21,7 @@ func Testxx() {
 		panic(err)
 	}
 
-	FafaRdb = db
+	FaFaRdb = db
 }
 
 func TestContentNode_CheckSeoValid(t *testing.T) {
@@ -50,7 +49,7 @@ func TestContentNode_InsertOne(t *testing.T) {
 	n.Seo = ""
 	n.Status = 1
 	n.SortNum = 3
-	c, err := FafaRdb.Client.MustCols("seo", "status").Omit("user_id").Where("user_id=?", n.UserId).Update(n)
+	c, err := FaFaRdb.Client.MustCols("seo", "status").Omit("user_id").Where("user_id=?", n.UserId).Update(n)
 	fmt.Println(c, err)
 
 }

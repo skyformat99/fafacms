@@ -832,7 +832,7 @@ func SortContent(c *gin.Context) {
 
 	// x will be set on the top inside it's level
 	if req.YID == 0 {
-		session := model.FafaRdb.Client.NewSession()
+		session := model.FaFaRdb.Client.NewSession()
 		defer session.Close()
 
 		err = session.Begin()
@@ -885,7 +885,7 @@ func SortContent(c *gin.Context) {
 		return
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	err = session.Begin()
@@ -1140,7 +1140,7 @@ func ListContentHelper(c *gin.Context, userId int64) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	// group list where prepare
@@ -1337,7 +1337,7 @@ func ListContentHistoryHelper(c *gin.Context, userId int64) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	// group list where prepare

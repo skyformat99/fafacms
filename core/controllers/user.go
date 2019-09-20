@@ -253,7 +253,7 @@ func CreateUser(c *gin.Context) {
 	u.Github = req.Github
 	u.WeiBo = req.WeiBo
 
-	// 默认激活
+	// default is activate
 	u.Status = 1
 	u.ActivateTime = time.Now().Unix()
 	err = u.InsertOne()
@@ -317,13 +317,12 @@ func ActivateUser(c *gin.Context) {
 		return
 	}
 
-	// 验证码过期，要重新生成验证码，需要用户手动请求另外的API
+	// activate code expired, must gen again
 	if u.ActivateCodeExpired < time.Now().Unix() {
 		flog.Log.Errorf("ActivateUser err:%s", "code expired")
 		resp.Error = Error(ActivateCodeExpired, "")
 		return
 	} else {
-		// 更新用户的状态
 		u.Status = 1
 		err = u.UpdateActivateStatus()
 		if err != nil {
@@ -332,7 +331,7 @@ func ActivateUser(c *gin.Context) {
 			return
 		}
 
-		// 激活成功马上为用户设置Session
+		// activate success will soon set session
 		token, err := SetUserSession(u)
 		if err != nil {
 			flog.Log.Errorf("ActivateUser err:%s", err.Error())
@@ -340,6 +339,7 @@ func ActivateUser(c *gin.Context) {
 			return
 		}
 
+		// return token
 		resp.Data = token
 	}
 
@@ -350,7 +350,7 @@ type ResendActivateCodeToUserRequest struct {
 	Email string `json:"email" validate:"required,email"`
 }
 
-// 用户激活验证码失效了，重新生成并发送邮件
+// Activate code expire must resent email ang get new one
 func ResendActivateCodeToUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(ResendActivateCodeToUserRequest)
@@ -371,7 +371,7 @@ func ResendActivateCodeToUser(c *gin.Context) {
 		return
 	}
 
-	// 通过用户邮箱获取用户信息
+	// get user info by email
 	u := new(model.User)
 	u.Email = req.Email
 	ok, err := u.GetUserByEmail()
@@ -390,13 +390,13 @@ func ResendActivateCodeToUser(c *gin.Context) {
 		resp.Flag = true
 		return
 	} else if u.ActivateCodeExpired > time.Now().Unix() {
-		// 验证码过期时间还没到，要等一下
+		// can not gen a new code because expire time not reach
 		flog.Log.Errorf("ResendUser err:%s", "code not expired")
 		resp.Error = Error(ActivateCodeNotExpired, "")
 		return
 	}
 
-	// 更新验证码，过期时间5分钟
+	// update activate code, expire after 5 min
 	err = u.UpdateActivateCode()
 	if err != nil {
 		flog.Log.Errorf("ResendUser err:%s", err.Error())
@@ -423,7 +423,7 @@ type ForgetPasswordRequest struct {
 	Email string `json:"email" validate:"required,email"`
 }
 
-// 用户忘记了密码，需要发重置密码验证码
+// When user want to modify password or forget password, can gen a code to change password
 func ForgetPasswordOfUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(ForgetPasswordRequest)
@@ -444,7 +444,6 @@ func ForgetPasswordOfUser(c *gin.Context) {
 		return
 	}
 
-	// 通过用户邮箱获取用户信息
 	u := new(model.User)
 	u.Email = req.Email
 	ok, err := u.GetUserByEmail()
@@ -459,9 +458,9 @@ func ForgetPasswordOfUser(c *gin.Context) {
 		return
 	}
 
-	// 重设密码验证码过期的话重新设置
+	// only code expired can gen a new one again
 	if u.ResetCodeExpired < time.Now().Unix() {
-		// 验证码300秒内有效
+		// code is valid in 5 min
 		err = u.UpdateCode()
 		if err != nil {
 			flog.Log.Errorf("ForgetPassword comerr:%s", err.Error())
@@ -498,7 +497,7 @@ type ChangePasswordRequest struct {
 	RePassword string `json:"repassword" validate:"eqfield=Password"`
 }
 
-// 更改密码，需要用到忘记密码的验证码
+// Change password by a forget password email code
 func ChangePasswordOfUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(ChangePasswordRequest)
@@ -519,7 +518,6 @@ func ChangePasswordOfUser(c *gin.Context) {
 		return
 	}
 
-	// 通过用户邮箱获取用户信息
 	u := new(model.User)
 	u.Email = req.Email
 	ok, err := u.GetUserByEmail()
@@ -534,7 +532,7 @@ func ChangePasswordOfUser(c *gin.Context) {
 		return
 	}
 
-	// 验证码一致，可以修改
+	// rest code is the same can change
 	if u.ResetCode == req.Code {
 		u.Password = req.Password
 		err = u.UpdatePassword()
@@ -549,7 +547,7 @@ func ChangePasswordOfUser(c *gin.Context) {
 		return
 	}
 
-	// 更改密码后需要删除登录信息
+	// after change password, session will delete all
 	DeleteUserAllSession(u.Id)
 	resp.Flag = true
 }
@@ -585,7 +583,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// 获取自己的信息
+	// get oneself's info
 	uu, err := GetUserSession(c)
 	if err != nil {
 		flog.Log.Errorf("UpdateUser err: %s", err.Error())
@@ -634,6 +632,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	// nickname can change 2 times one month
 	if req.NickName != "" && req.NickName != uuu.NickName {
 		if uuu.NickNameUpdateTime != 0 {
 			passTime := time.Now().Unix() - uuu.NickNameUpdateTime
@@ -682,13 +681,14 @@ func UpdateUser(c *gin.Context) {
 	resp.Data = u
 }
 
-// 用户获取自己的信息
+// Take oneself's user info
 func TakeUser(c *gin.Context) {
 	resp := new(Resp)
 	defer func() {
 		JSONL(c, 200, nil, resp)
 	}()
 
+	// just get from session
 	u, err := GetUserSession(c)
 	if err != nil {
 		flog.Log.Errorf("TakeUser err:%s", err.Error())
@@ -722,7 +722,7 @@ type ListUserResponse struct {
 	PageHelp
 }
 
-// 列出用户列表，超级管理员权限
+// List user, admin url
 func ListUser(c *gin.Context) {
 	resp := new(Resp)
 
@@ -746,7 +746,7 @@ func ListUser(c *gin.Context) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	// group list where prepare
@@ -848,7 +848,7 @@ type ListGroupUserResponse struct {
 	Users []model.User `json:"users"`
 }
 
-// 列出组下的用户
+// List the users of group
 func ListGroupUser(c *gin.Context) {
 	resp := new(Resp)
 
@@ -872,7 +872,7 @@ func ListGroupUser(c *gin.Context) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	users := make([]model.User, 0)
@@ -896,7 +896,7 @@ type AssignGroupRequest struct {
 	Users        []int64 `json:"users"`
 }
 
-// 为用户分配组，每个用户只能有一个组，权限相对弱一点
+// Assign user to a group, every user can only have less than one group
 func AssignGroupToUser(c *gin.Context) {
 	resp := new(Resp)
 	req := new(AssignGroupRequest)
@@ -915,10 +915,10 @@ func AssignGroupToUser(c *gin.Context) {
 		return
 	}
 
-	// 为用户移除组
+	// release the user of group, user will not belong to any group
 	if req.GroupRelease == 1 {
 		u := new(model.User)
-		num, err := model.FafaRdb.Client.Cols("group_id").In("id", req.Users).Update(u)
+		num, err := model.FaFaRdb.Client.Cols("group_id").In("id", req.Users).Update(u)
 		if err != nil {
 			flog.Log.Errorf("AssignGroupToUser err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -956,7 +956,7 @@ func AssignGroupToUser(c *gin.Context) {
 
 		u := new(model.User)
 		u.GroupId = req.GroupId
-		num, err := model.FafaRdb.Client.Cols("group_id").In("id", req.Users).Update(u)
+		num, err := model.FaFaRdb.Client.Cols("group_id").In("id", req.Users).Update(u)
 		if err != nil {
 			flog.Log.Errorf("AssignGroupToUser err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -982,7 +982,7 @@ type UpdateUserAdminRequest struct {
 	Status   int    `json:"status" validate:"oneof=0 1 2"`
 }
 
-// 更新用户信息，超级管理员，可以修改用户密码，以及将用户加入黑名单，禁止使用等
+// Update user info, admin url. Can change user password, black one user, change nickname etc.
 func UpdateUserAdmin(c *gin.Context) {
 	resp := new(Resp)
 	req := new(UpdateUserAdminRequest)
@@ -1025,6 +1025,7 @@ func UpdateUserAdmin(c *gin.Context) {
 		return
 	}
 
+	// admin can change nickname no more limit
 	if req.NickName != "" && req.NickName != uu.NickName {
 		u.NickName = req.NickName
 		repeat, err := u.IsNickNameRepeat()
@@ -1042,7 +1043,7 @@ func UpdateUserAdmin(c *gin.Context) {
 	u.Id = req.Id
 	u.Password = req.Password
 
-	// 可以将用户拉入黑名单或者激活
+	// change user status, 1->2, 2->1
 	u.Status = req.Status
 	err = u.UpdateInfo()
 	if err != nil {

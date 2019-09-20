@@ -75,7 +75,7 @@ func JSONL(c *gin.Context, code int, req interface{}, obj *Resp) {
 	Log.Debugf("FaFa Monitor:%#v", record)
 
 	// log table not read fot it will slow the service
-	//_, err := model.FafaRdb.InsertOne(record)
+	//_, err := model.FaFaRdb.InsertOne(record)
 	//if err != nil {
 	//	Log.Errorf("insert log record:%s", err.Error())
 	//}

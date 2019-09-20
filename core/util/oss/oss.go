@@ -13,19 +13,19 @@ type Key struct {
 }
 
 func SaveFile(K Key, ObjectName string, raw []byte) error {
-	// 创建OSSClient实例。
+	// create OSSClient instance
 	client, err := oss.New(K.Endpoint, K.AccessKeyId, K.AccessKeySecret)
 	if err != nil {
 		return err
 	}
 
-	// 获取存储空间。
+	// take bucket
 	bucket, err := client.Bucket(K.BucketName)
 	if err != nil {
 		return err
 	}
 
-	// 上传Byte数组。
+	// put bucket
 	err = bucket.PutObject(ObjectName, bytes.NewReader(raw))
 	if err != nil {
 		return err

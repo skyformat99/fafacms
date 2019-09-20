@@ -4,14 +4,13 @@ import (
 	"time"
 )
 
-func Sleep(wait_time int) {
-	if wait_time <= 0 {
+func Sleep(waitTime int) {
+	if waitTime <= 0 {
 		return
 	}
-	time.Sleep(time.Duration(wait_time) * time.Second)
+	time.Sleep(time.Duration(waitTime) * time.Second)
 }
 
-// Get Secord
 func Second(times int) time.Duration {
 	return time.Duration(times) * time.Second
 }
@@ -25,18 +24,6 @@ func GetSecondTimes() int64 {
 	return time.Now().UTC().Unix()
 }
 
-//201611112113
-func GetSecond2DateTimes(secord int64) string {
-	tm := time.Unix(secord, 0)
-	return tm.Format("20060102150405")
-
-}
-
-func GetDateTimes2Second(datestring string) int64 {
-	tm2, _ := time.Parse("20060102150405", datestring)
-	return tm2.Unix()
-
-}
 func TodayString(level int) string {
 	formats := "20060102150405"
 	switch level {

@@ -36,6 +36,6 @@ func InitRdb(dbConfig rdb.MyDbConfig) error {
 		return err
 	}
 
-	model.FafaRdb = db
+	model.FaFaRdb = db
 	return nil
 }

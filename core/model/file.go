@@ -32,7 +32,7 @@ func (f *File) Exist() (bool, error) {
 	if f.Id == 0 && f.Url == "" {
 		return false, errors.New("where is empty")
 	}
-	s := FafaRdb.Client.Table(f)
+	s := FaFaRdb.Client.Table(f)
 	s.Where("1=1")
 
 	if f.Id != 0 {
@@ -69,7 +69,7 @@ func (f *File) Get() (bool, error) {
 		f.Url = ""
 	}
 
-	return FafaRdb.Client.Get(f)
+	return FaFaRdb.Client.Get(f)
 }
 
 func (f *File) Update(hide bool) (bool, error) {
@@ -77,7 +77,7 @@ func (f *File) Update(hide bool) (bool, error) {
 		return false, errors.New("where is empty")
 	}
 
-	s := FafaRdb.Client.NewSession()
+	s := FaFaRdb.Client.NewSession()
 	defer s.Close()
 
 	s.Where("id=?", f.Id)
@@ -114,7 +114,7 @@ func (f *File) UpdateStatus() (bool, error) {
 		return false, errors.New("where is empty")
 	}
 
-	s := FafaRdb.Client.NewSession()
+	s := FaFaRdb.Client.NewSession()
 	defer s.Close()
 
 	s.Where("id=?", f.Id).Cols("status")

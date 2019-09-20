@@ -240,7 +240,7 @@ func UploadFile(c *gin.Context) {
 		p.UserName = uName
 		p.Tag = tag
 		p.Size = int64(fileSize)
-		_, err = model.FafaRdb.InsertOne(p)
+		_, err = model.FaFaRdb.InsertOne(p)
 		if err != nil {
 			Log.Errorf("upload err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -320,7 +320,7 @@ func ListFileAdminHelper(c *gin.Context, userId int64) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	// group list where prepare

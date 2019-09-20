@@ -39,7 +39,7 @@ func (g *Group) GetById() (exist bool, err error) {
 	if g.Id == 0 {
 		return false, errors.New("where is empty")
 	}
-	exist, err = FafaRdb.Client.Get(g)
+	exist, err = FaFaRdb.Client.Get(g)
 	return
 }
 
@@ -49,7 +49,7 @@ func (g *Group) Update() error {
 	}
 
 	g.UpdateTime = time.Now().Unix()
-	_, err := FafaRdb.Client.Where("id=?", g.Id).Omit("id").Update(g)
+	_, err := FaFaRdb.Client.Where("id=?", g.Id).Omit("id").Update(g)
 	return err
 }
 
@@ -58,7 +58,7 @@ func (g *Group) Exist() (bool, error) {
 		return false, errors.New("where is empty")
 	}
 
-	s := FafaRdb.Client.Table(g)
+	s := FaFaRdb.Client.Table(g)
 	s.Where("1=1")
 
 	if g.Id != 0 {
@@ -82,7 +82,7 @@ func (g *Group) Delete() error {
 		return errors.New("where is empty")
 	}
 
-	_, err := FafaRdb.Client.Delete(g)
+	_, err := FaFaRdb.Client.Delete(g)
 	return err
 }
 
@@ -94,13 +94,13 @@ func (g *Group) Take() (bool, error) {
 	if !ok {
 		return false, nil
 	}
-	return FafaRdb.Client.Get(g)
+	return FaFaRdb.Client.Get(g)
 
 }
 
 func (r *Resource) Get() (err error) {
 	var exist bool
-	exist, err = FafaRdb.Client.UseBool("admin").Get(r)
+	exist, err = FaFaRdb.Client.UseBool("admin").Get(r)
 	if err != nil {
 		return
 	}
@@ -111,11 +111,11 @@ func (r *Resource) Get() (err error) {
 }
 
 func (r *Resource) GetRaw() (bool, error) {
-	return FafaRdb.Client.UseBool("admin").Get(r)
+	return FaFaRdb.Client.UseBool("admin").Get(r)
 }
 
 func (r *Resource) InsertOne() (err error) {
-	_, err = FafaRdb.Client.InsertOne(r)
+	_, err = FaFaRdb.Client.InsertOne(r)
 	if err != nil {
 		return
 	}
@@ -127,7 +127,7 @@ func (gr *GroupResource) Exist() (bool, error) {
 		return false, errors.New("where is empty")
 	}
 
-	s := FafaRdb.Client.Table(gr)
+	s := FaFaRdb.Client.Table(gr)
 	s.Where("1=1")
 
 	if gr.Id != 0 {

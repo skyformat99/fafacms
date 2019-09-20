@@ -18,7 +18,7 @@ var (
 	GP   = []string{"POST", "GET"}
 )
 
-// 路由，最后一个参数表示是否需要管理权限
+// Router
 var (
 	HomeRouter = map[string]HttpHandle{
 		// 前端路由

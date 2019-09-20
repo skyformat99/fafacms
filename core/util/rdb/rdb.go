@@ -107,17 +107,17 @@ func NewDb(config MyDbConfig) (*MyDb, error) {
 				}
 				engine.SetLogger(xorm.NewSimpleLogger(f))
 			}
-			engine.ShowSQL(true) //会在控制台打印出生成的SQL语句
+			engine.ShowSQL(true)
 		}
 
-		engine.TZLocation, _ = time.LoadLocation("Asia/Shanghai") //标准时区,或者"Asia/Shanghai"
+		engine.TZLocation, _ = time.LoadLocation("Asia/Shanghai")
 
 		if config.Prefix != "" {
 			tbMapper := core.NewPrefixMapper(core.SnakeMapper{}, config.Prefix)
 			engine.SetTableMapper(tbMapper)
 		}
 
-		engine.SetMaxIdleConns(config.MaxIdleConns) //  Mysql连接池
+		engine.SetMaxIdleConns(config.MaxIdleConns)
 		engine.SetMaxOpenConns(config.MaxOpenConns)
 
 		if err := engine.Ping(); err != nil {

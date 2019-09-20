@@ -66,7 +66,7 @@ func (c *Content) CountNumUnderNode() (int64, error) {
 		return 0, errors.New("where is empty")
 	}
 
-	allNum, err := FafaRdb.Client.Table(c).Where("user_id=?", c.UserId).And("node_id=?", c.NodeId).Count()
+	allNum, err := FaFaRdb.Client.Table(c).Where("user_id=?", c.UserId).And("node_id=?", c.NodeId).Count()
 	if err != nil {
 		return 0, err
 	}
@@ -78,7 +78,7 @@ func (c *Content) CheckSeoValid() (bool, error) {
 		return false, errors.New("where is empty")
 	}
 
-	num, err := FafaRdb.Client.Table(c).Where("user_id=?", c.UserId).And("seo=?", c.Seo).Count()
+	num, err := FaFaRdb.Client.Table(c).Where("user_id=?", c.UserId).And("seo=?", c.Seo).Count()
 
 	if num >= 1 {
 		return true, nil
@@ -88,7 +88,7 @@ func (c *Content) CheckSeoValid() (bool, error) {
 
 func (c *Content) Insert() (int64, error) {
 	c.CreateTime = time.Now().Unix()
-	return FafaRdb.InsertOne(c)
+	return FaFaRdb.InsertOne(c)
 }
 
 func (c *Content) Get() (bool, error) {
@@ -96,11 +96,11 @@ func (c *Content) Get() (bool, error) {
 		return false, errors.New("where is empty")
 	}
 
-	return FafaRdb.Client.Get(c)
+	return FaFaRdb.Client.Get(c)
 }
 
 func (c *Content) GetByRaw() (bool, error) {
-	return FafaRdb.Client.Get(c)
+	return FaFaRdb.Client.Get(c)
 }
 
 func (c *Content) UpdateDescribeAndHistory(save bool) error {
@@ -108,7 +108,7 @@ func (c *Content) UpdateDescribeAndHistory(save bool) error {
 		return errors.New("where is empty")
 	}
 
-	session := FafaRdb.Client.NewSession()
+	session := FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	var err error
@@ -155,14 +155,14 @@ func (c *Content) UpdateSeo() (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
 	}
-	return FafaRdb.Client.Cols("seo").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	return FaFaRdb.Client.Cols("seo").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
 func (c *Content) UpdateImage() (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
 	}
-	return FafaRdb.Client.Cols("image_path").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	return FaFaRdb.Client.Cols("image_path").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
 func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
@@ -172,11 +172,11 @@ func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
 
 	if c.Status == 2 {
 		c.BanTime = time.Now().Unix()
-		return FafaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+		return FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 	}
 
 	if isBanChange {
-		se := FafaRdb.Client.NewSession()
+		se := FaFaRdb.Client.NewSession()
 		err := se.Begin()
 		if err != nil {
 			return 0, err
@@ -203,14 +203,14 @@ func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
 		}
 		return 0, nil
 	}
-	return FafaRdb.Client.Cols("status").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	return FaFaRdb.Client.Cols("status").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
 func (c *Content) UpdateTop() (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
 	}
-	return FafaRdb.Client.Cols("top").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	return FaFaRdb.Client.Cols("top").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
 // update comment
@@ -218,7 +218,7 @@ func (c *Content) UpdateComment() (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
 	}
-	return FafaRdb.Client.Cols("close_comment").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	return FaFaRdb.Client.Cols("close_comment").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
 // update password
@@ -226,7 +226,7 @@ func (c *Content) UpdatePassword() (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
 	}
-	return FafaRdb.Client.Cols("password").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+	return FaFaRdb.Client.Cols("password").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
 func (n *Content) UpdateNode(beforeNodeId int64) error {
@@ -234,7 +234,7 @@ func (n *Content) UpdateNode(beforeNodeId int64) error {
 		return errors.New("where is empty")
 	}
 
-	session := FafaRdb.Client.NewSession()
+	session := FaFaRdb.Client.NewSession()
 	defer session.Close()
 	err := session.Begin()
 	if err != nil {
@@ -277,21 +277,21 @@ func (n *Content) UpdateNode(beforeNodeId int64) error {
 }
 
 func (c *Content) UpdateView() {
-	FafaRdb.Client.ID(c.Id).Incr("views").Update(new(Content))
+	FaFaRdb.Client.ID(c.Id).Incr("views").Update(new(Content))
 }
 
 // get brother content
 func (c *Content) GetBrotherContent() (pre, next *Content, err error) {
 	pre = new(Content)
 	next = new(Content)
-	session1 := FafaRdb.Client.Where("sort_num > ?", c.SortNum).And("id!=?", c.Id).And("node_id=?", c.NodeId).Omit("describe", "pre_describe")
+	session1 := FaFaRdb.Client.Where("sort_num > ?", c.SortNum).And("id!=?", c.Id).And("node_id=?", c.NodeId).Omit("describe", "pre_describe")
 	session1.And("status=?", 0).And("version>?", 0).Asc("sort_num").Limit(1)
 	_, err = session1.Get(next)
 	if err != nil {
 		return
 	}
 
-	session2 := FafaRdb.Client.Where("sort_num < ?", c.SortNum).And("id!=?", c.Id).And("node_id=?", c.NodeId).Omit("describe", "pre_describe")
+	session2 := FaFaRdb.Client.Where("sort_num < ?", c.SortNum).And("id!=?", c.Id).And("node_id=?", c.NodeId).Omit("describe", "pre_describe")
 	session2.And("status=?", 0).And("version>?", 0).Desc("sort_num").Limit(1)
 	_, err = session2.Get(pre)
 	if err != nil {
@@ -306,7 +306,7 @@ func (c *Content) PublishDescribe() error {
 		return errors.New("where is empty")
 	}
 
-	session := FafaRdb.Client.NewSession()
+	session := FaFaRdb.Client.NewSession()
 	defer session.Close()
 	if err := session.Begin(); err != nil {
 		return err
@@ -359,7 +359,7 @@ func (c *Content) ResetDescribe(save bool) error {
 		return errors.New("where is empty")
 	}
 
-	session := FafaRdb.Client.NewSession()
+	session := FaFaRdb.Client.NewSession()
 	defer session.Close()
 	if err := session.Begin(); err != nil {
 		return err
@@ -405,7 +405,7 @@ func (c *Content) Delete() error {
 		return errors.New("where is empty")
 	}
 
-	session := FafaRdb.Client.NewSession()
+	session := FaFaRdb.Client.NewSession()
 	defer session.Close()
 	if err := session.Begin(); err != nil {
 		return err
@@ -454,11 +454,11 @@ func (c *Content) Delete() error {
 }
 
 func (c *ContentHistory) GetRaw() (bool, error) {
-	return FafaRdb.Client.Get(c)
+	return FaFaRdb.Client.Get(c)
 }
 
 func (c *ContentHistory) Delete() (int64, error) {
-	return FafaRdb.Client.Where("id=?", c.Id).And("user_id=?", c.UserId).Delete(new(ContentHistory))
+	return FaFaRdb.Client.Where("id=?", c.Id).And("user_id=?", c.UserId).Delete(new(ContentHistory))
 }
 
 type ContentCool struct {
@@ -479,7 +479,7 @@ func (c *ContentCool) Exist() (ok bool, err error) {
 	if c.UserId == 0 || c.ContentId == 0 {
 		return false, errors.New("where is empty")
 	}
-	num, err := FafaRdb.Client.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Count(new(ContentCool))
+	num, err := FaFaRdb.Client.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Count(new(ContentCool))
 	if err != nil {
 		return false, err
 	}
@@ -497,7 +497,7 @@ func (c *ContentCool) Create() (err error) {
 
 	c.CreateTime = time.Now().Unix()
 
-	se := FafaRdb.Client.NewSession()
+	se := FaFaRdb.Client.NewSession()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -537,7 +537,7 @@ func (c *ContentCool) Delete() (err error) {
 	if c.UserId == 0 || c.ContentId == 0 {
 		return errors.New("where is empty")
 	}
-	se := FafaRdb.Client.NewSession()
+	se := FaFaRdb.Client.NewSession()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -577,7 +577,7 @@ func (c *ContentBad) Exist() (ok bool, err error) {
 	if c.UserId == 0 || c.ContentId == 0 {
 		return false, errors.New("where is empty")
 	}
-	num, err := FafaRdb.Client.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Count(new(ContentBad))
+	num, err := FaFaRdb.Client.Where("user_id=?", c.UserId).And("content_id=?", c.ContentId).Count(new(ContentBad))
 	if err != nil {
 		return false, err
 	}
@@ -594,7 +594,7 @@ func (c *ContentBad) Create() (err error) {
 	}
 
 	c.CreateTime = time.Now().Unix()
-	se := FafaRdb.Client.NewSession()
+	se := FaFaRdb.Client.NewSession()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -634,7 +634,7 @@ func (c *ContentBad) Delete() (err error) {
 	if c.UserId == 0 || c.ContentId == 0 {
 		return errors.New("where is empty")
 	}
-	se := FafaRdb.Client.NewSession()
+	se := FaFaRdb.Client.NewSession()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -677,6 +677,6 @@ func (c *Content) Ban(num int64) (err error) {
 
 	c.BanTime = time.Now().Unix()
 	c.Status = 2
-	_, err = FafaRdb.Client.Where("id=?", c.Id).And("status!=?", 2).And("bad>?", num).Cols("ban_time", "status").Update(c)
+	_, err = FaFaRdb.Client.Where("id=?", c.Id).And("status!=?", 2).And("bad>?", num).Cols("ban_time", "status").Update(c)
 	return
 }

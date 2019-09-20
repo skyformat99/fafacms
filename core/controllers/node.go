@@ -611,7 +611,7 @@ func DeleteNode(c *gin.Context) {
 		return
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	err = session.Begin()
@@ -667,7 +667,7 @@ func TakeNode(c *gin.Context) {
 		return
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	session.Table(new(model.ContentNode)).Where("1=1").And("user_id=?", uu.Id)
@@ -725,7 +725,7 @@ func TakeNode(c *gin.Context) {
 	// is the root level and want list son
 	if f.Level == 0 && req.ListSon {
 		ns := make([]model.ContentNode, 0)
-		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).Find(&ns)
+		err = model.FaFaRdb.Client.Where("parent_node_id=?", f.Id).Find(&ns)
 		if err != nil {
 			flog.Log.Errorf("Node err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -802,7 +802,7 @@ func ListNodeHelper(c *gin.Context, userId int64) {
 		return
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	session.Table(new(model.ContentNode)).Where("1=1")
@@ -886,16 +886,15 @@ func ListNodeHelper(c *gin.Context, userId int64) {
 	resp.Data = respResult
 }
 
-// 将X节点放在Y节点的下面
-// 所以想把一个X节点拖到父节点的最顶层是做不到的，需要拖两次
-// 上面拖两次的问题可以解决了，就是YID为空时，直接把他拖到最前面
+// put x behind y
+// when y is zero, x will be the top one.
 type SortNodeRequest struct {
 	XID int64 `json:"xid" validate:"required"`
 	YID int64 `json:"yid"`
 }
 
-//  节点
-//  拖曳排序超级函数
+//  Sort the node
+//  sort_num more small more forward
 func SortNode(c *gin.Context) {
 	resp := new(Resp)
 	req := new(SortNodeRequest)
@@ -945,9 +944,9 @@ func SortNode(c *gin.Context) {
 		return
 	}
 
-	// x节点要拉到最顶层
+	// x will be put in the top in it's level
 	if req.YID == 0 {
-		session := model.FafaRdb.Client.NewSession()
+		session := model.FaFaRdb.Client.NewSession()
 		defer session.Close()
 
 		err = session.Begin()
@@ -957,7 +956,7 @@ func SortNode(c *gin.Context) {
 			return
 		}
 
-		// 比x小的都往下走，因为x要做大哥
+		// all nodes which small than x, will +1 for x want to be top
 		//  --- a  0		---
 		//  --- x  1   ==》	--- a x 1
 		//  --- b  2		--- b 2
@@ -969,7 +968,7 @@ func SortNode(c *gin.Context) {
 			return
 		}
 
-		// x做大哥了
+		// x now is top!
 		_, err = session.Exec("update fafacms_content_node SET sort_num=0 where user_id = ? and parent_node_id = ? and id = ?", uu.Id, x.ParentNodeId, x.Id)
 		if err != nil {
 			session.Rollback()
@@ -997,7 +996,7 @@ func SortNode(c *gin.Context) {
 		return
 	}
 
-	// x是y的爸爸了，怎么可以和儿子做兄弟
+	// x is father of y, can not to be brother of y
 	if y.ParentNodeId == x.Id {
 		flog.Log.Errorf("SortNode err: %s", "can not move node to be his child's brother")
 		resp.Error = Error(ContentNodeSortConflict, "can not move node to be his child's brother")
@@ -1011,14 +1010,14 @@ func SortNode(c *gin.Context) {
 		return
 	}
 
-	// 当y是儿子节点，但x想当y兄弟，然而x已经有一堆儿子了，当不了兄弟
+	// y is son, but x want to be y's brother, however, x has children
 	if y.Level == 1 && children > 0 {
 		flog.Log.Errorf("SortNode err: %s", "x has child can not move to be other's child's brother")
 		resp.Error = Error(ContentNodeSortConflict, "x has child can not move to be other's child's brother")
 		return
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	err = session.Begin()
@@ -1028,7 +1027,7 @@ func SortNode(c *gin.Context) {
 		return
 	}
 
-	// 先把x假装删掉，比x大的都-1，依次顶上x的位置
+	// all nodes behind x sort_num-1, one by one to replace x's position, pretend x is delete
 	_, err = session.Exec("update fafacms_content_node SET sort_num=sort_num-1 where sort_num > ? and user_id = ? and parent_node_id = ?", x.SortNum, uu.Id, x.ParentNodeId)
 	if err != nil {
 		session.Rollback()
@@ -1037,7 +1036,7 @@ func SortNode(c *gin.Context) {
 		return
 	}
 
-	// 把大于y排序的节点都+1，腾出位置给x
+	// all nodes behind y sort_num+1, make a empty position to x
 	_, err = session.Exec("update fafacms_content_node SET sort_num=sort_num+1 where sort_num > ? and user_id = ? and parent_node_id = ?", y.SortNum, uu.Id, y.ParentNodeId)
 	if err != nil {
 		session.Rollback()
@@ -1046,8 +1045,9 @@ func SortNode(c *gin.Context) {
 		return
 	}
 
-	// 先把x假装删掉，比x大的都-1，依次顶上x的位置，把大于y排序的节点都+1，腾出位置给x
-	// 同一级
+	// all nodes behind x sort_num-1, one by one to replace x's position, pretend x is delete
+	// all nodes behind y sort_num+1, make a empty position to x
+	// same level
 	// y>x  y=5 x=2
 	//   --- a	0		--- a 0			--- a 0
 	//   --- b  1 ==>	--- b 1 	==>	--- b 1
@@ -1066,7 +1066,7 @@ func SortNode(c *gin.Context) {
 	//   --- x	5		--- xe 5		---	xe 6
 	//   --- e	6		---
 
-	// 不同级
+	// diff level
 	// y=1
 	//   --- a	0		--- a 0				--- a 0
 	//   --- b  1 	==>	--- b 1 		==>	--- b 1
@@ -1075,12 +1075,9 @@ func SortNode(c *gin.Context) {
 	//   	--- d 2			--- d 2				--- d 3
 	//   --- x	2		--- xe 2			---	xe 2
 	//   --- e	3
-
-	// x顶上, 如果同一级的，且y>x
 	if x.ParentNodeId == y.ParentNodeId && y.SortNum > x.SortNum {
 		_, err = session.Exec("update fafacms_content_node SET sort_num=?,level=?,parent_node_id=? where user_id = ? and id = ?", y.SortNum, y.Level, y.ParentNodeId, uu.Id, x.Id)
 	} else {
-		// 否则
 		_, err = session.Exec("update fafacms_content_node SET sort_num=?,level=?,parent_node_id=? where user_id = ? and id = ?", y.SortNum+1, y.Level, y.ParentNodeId, uu.Id, x.Id)
 	}
 	if err != nil {

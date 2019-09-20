@@ -14,7 +14,7 @@ func TestMail_Sent(t *testing.T) {
 
 	m := new(Message)
 	m.Sender = s
-	m.To = "569929309@qq.com"
+	m.To = "gao.yu@husky.neu.edu"
 	m.ToName = "user"
 	m.Subject = "register"
 	m.Body = "ddddddddd"

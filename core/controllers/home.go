@@ -77,7 +77,7 @@ func Peoples(c *gin.Context) {
 		return
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	session.Table(new(model.User)).Where("1=1").And("status!=?", 0).And("name!=?", "admin")
@@ -200,7 +200,7 @@ func NodesInfo(c *gin.Context) {
 		return
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	session.Table(new(model.ContentNode)).Where("1=1").And("status=?", 0)
@@ -317,7 +317,7 @@ func NodeInfo(c *gin.Context) {
 		}
 	}
 
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	session.Table(new(model.ContentNode)).Where("1=1").And("status=?", 0)
@@ -373,7 +373,7 @@ func NodeInfo(c *gin.Context) {
 	// 是顶层且需要列出儿子
 	if f.Level == 0 && req.ListSon {
 		ns := make([]model.ContentNode, 0)
-		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).And("status=?", 0).Find(&ns)
+		err = model.FaFaRdb.Client.Where("parent_node_id=?", f.Id).And("status=?", 0).Find(&ns)
 		if err != nil {
 			flog.Log.Errorf("Node err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -431,7 +431,7 @@ func UserInfo(c *gin.Context) {
 	user := new(model.User)
 	user.Id = req.Id
 	user.Name = req.Name
-	exist, err := model.FafaRdb.Client.Where("status!=?", 0).Get(user)
+	exist, err := model.FaFaRdb.Client.Where("status!=?", 0).Get(user)
 	if err != nil {
 		flog.Log.Errorf("UserInfo err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -537,7 +537,7 @@ func UserCount(c *gin.Context) {
 	req.UserId = user.Id
 
 	sql := fmt.Sprintf("SELECT DATE_FORMAT(from_unixtime(first_publish_time + %d * 3600)", TimeZone) + ",'%Y%m%d') days,count(id) count FROM `fafacms_content` WHERE first_publish_time!=0 and user_id=? and version>0 and status=0 group by days;"
-	result, err := model.FafaRdb.Client.QueryString(sql, req.UserId)
+	result, err := model.FaFaRdb.Client.QueryString(sql, req.UserId)
 	if err != nil {
 		flog.Log.Errorf("UserCount err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -632,7 +632,7 @@ func Contents(c *gin.Context) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	// group list where prepare

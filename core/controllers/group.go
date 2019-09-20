@@ -75,7 +75,7 @@ func CreateGroup(c *gin.Context) {
 	// insert now
 	g.Describe = req.Describe
 	g.CreateTime = time.Now().Unix()
-	_, err = model.FafaRdb.InsertOne(g)
+	_, err = model.FaFaRdb.InsertOne(g)
 	if err != nil {
 		flog.Log.Errorf("CreateGroup err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -354,7 +354,7 @@ func ListGroup(c *gin.Context) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	// group list where prepare
@@ -452,7 +452,7 @@ func ListGroupResource(c *gin.Context) {
 	}
 
 	// new query list session
-	session := model.FafaRdb.Client.NewSession()
+	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	grs := make([]model.GroupResource, 0)

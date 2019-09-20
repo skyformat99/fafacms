@@ -11,7 +11,7 @@ const (
 	CommentTypeOfComment     = 2
 	CommentAnonymous         = 1
 
-	AnonymousUser = "匿名"
+	AnonymousUser = "void"
 )
 
 type Comment struct {
@@ -62,7 +62,7 @@ type CommentBad struct {
 }
 
 func (c *Comment) InsertOne() error {
-	se := FafaRdb.Client.NewSession()
+	se := FaFaRdb.Client.NewSession()
 	err := se.Begin()
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func (c *Comment) Get() (bool, error) {
 	if c.Id == 0 {
 		return false, errors.New("where is empty")
 	}
-	return FafaRdb.Client.Get(c)
+	return FaFaRdb.Client.Get(c)
 }
 
 func (c *Comment) Delete() (err error) {
@@ -111,7 +111,7 @@ func (c *Comment) Delete() (err error) {
 		return errors.New("where is empty")
 	}
 
-	se := FafaRdb.Client.NewSession()
+	se := FaFaRdb.Client.NewSession()
 	err = se.Begin()
 	if err != nil {
 		return err

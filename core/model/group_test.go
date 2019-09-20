@@ -9,5 +9,5 @@ func TestGroup_GetById(t *testing.T) {
 
 	g := new(Group)
 	g.Id = 2
-	FafaRdb.Client.Id(g.Id).Get(g)
+	FaFaRdb.Client.Id(g.Id).Get(g)
 }

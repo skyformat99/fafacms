@@ -45,7 +45,7 @@ func CreateNode(c *gin.Context) {
 	n := new(model.ContentNode)
 	n.UserId = uu.Id
 
-	// 如果SEO非空，检查是否已经存在
+	// If seo not empty, check valid
 	if req.Seo != "" {
 		n.Seo = req.Seo
 		exist, err := n.CheckSeoValid()
@@ -55,7 +55,6 @@ func CreateNode(c *gin.Context) {
 			return
 		}
 		if exist {
-			// 存在报错
 			flog.Log.Errorf("CreateNode err: %s", "node seo already be use")
 			resp.Error = Error(ContentNodeSeoAlreadyBeUsed, "")
 			return
@@ -65,7 +64,7 @@ func CreateNode(c *gin.Context) {
 		return
 	}
 
-	// 如果指定了父亲节点
+	// if node has parent
 	if req.ParentNodeId != 0 {
 		n.ParentNodeId = req.ParentNodeId
 		exist, err := n.CheckParentValid()
@@ -75,7 +74,7 @@ func CreateNode(c *gin.Context) {
 			return
 		}
 		if !exist {
-			// 父亲节点不存在，报错
+			// parent not exist
 			flog.Log.Errorf("CreateNode err: %s", "parent content node not found")
 			resp.Error = Error(ContentParentNodeNotFound, "")
 			return
@@ -140,7 +139,7 @@ type UpdateSeoOfNodeRequest struct {
 
 type UpdateParentOfNodeRequest struct {
 	Id           int64 `json:"id" validate:"required"`
-	ToBeRoot     bool  `json:"to_be_root"` // 升级为最上层节点
+	ToBeRoot     bool  `json:"to_be_root"` // let the node to be root node, in the first level
 	ParentNodeId int64 `json:"parent_node_id"`
 }
 
@@ -174,7 +173,7 @@ func UpdateSeoOfNode(c *gin.Context) {
 	n.Id = req.Id
 	n.UserId = uu.Id
 
-	// 获取节点，节点会携带所有内容
+	// Get info of node
 	exist, err := n.Get()
 	if err != nil {
 		flog.Log.Errorf("UpdateSeoOfNode err: %s", err.Error())
@@ -182,7 +181,6 @@ func UpdateSeoOfNode(c *gin.Context) {
 		return
 	}
 	if !exist {
-		// 不存在节点，报错
 		flog.Log.Errorf("UpdateSeoOfNode err: %s", "content node not found")
 		resp.Error = Error(ContentNodeNotFound, "")
 		return
@@ -194,11 +192,11 @@ func UpdateSeoOfNode(c *gin.Context) {
 
 	seoChange := false
 
-	// 和之前的SEO不一样
+	// Seo change
 	if req.Seo != n.Seo {
 		after.Seo = req.Seo
 		seoChange = true
-		// 检查是否存在SEO
+		// check seo is valid
 		exist, err := after.CheckSeoValid()
 		if err != nil {
 			flog.Log.Errorf("UpdateSeoOfNode err: %s", err.Error())
@@ -206,7 +204,7 @@ func UpdateSeoOfNode(c *gin.Context) {
 			return
 		}
 		if exist {
-			// SEO存在了，报错
+			// SEO been occupy will err
 			flog.Log.Errorf("UpdateSeoOfNode err: %s", "seo been used")
 			resp.Error = Error(ContentNodeSeoAlreadyBeUsed, "")
 			return
@@ -214,7 +212,7 @@ func UpdateSeoOfNode(c *gin.Context) {
 	}
 
 	if seoChange {
-		// 更新
+		// update the seo
 		err = after.UpdateSeo()
 		if err != nil {
 			flog.Log.Errorf("UpdateSeoOfNode err:%s", err.Error())
@@ -255,7 +253,6 @@ func UpdateInfoOfNode(c *gin.Context) {
 	n.Id = req.Id
 	n.UserId = uu.Id
 
-	// 获取节点，节点会携带所有内容
 	exist, err := n.Get()
 	if err != nil {
 		flog.Log.Errorf("UpdateInfoOfNode err: %s", err.Error())
@@ -263,7 +260,6 @@ func UpdateInfoOfNode(c *gin.Context) {
 		return
 	}
 	if !exist {
-		// 不存在节点，报错
 		flog.Log.Errorf("UpdateInfoOfNode err: %s", "content node not found")
 		resp.Error = Error(ContentNodeNotFound, "")
 		return
@@ -273,7 +269,7 @@ func UpdateInfoOfNode(c *gin.Context) {
 	after.UserId = n.UserId
 	after.Id = n.Id
 
-	// 以下只要存在不一致性才替换
+	// Only name change will update
 	if req.Name != "" {
 		if req.Name != n.Name {
 			after.Name = req.Name
@@ -282,7 +278,6 @@ func UpdateInfoOfNode(c *gin.Context) {
 
 	after.Describe = req.Describe
 
-	// 更新
 	err = after.UpdateInfo()
 	if err != nil {
 		flog.Log.Errorf("UpdateNode err:%s", err.Error())
@@ -322,7 +317,6 @@ func UpdateImageOfNode(c *gin.Context) {
 	n.Id = req.Id
 	n.UserId = uu.Id
 
-	// 获取节点，节点会携带所有内容
 	exist, err := n.Get()
 	if err != nil {
 		flog.Log.Errorf("UpdateInfoOfNode err: %s", err.Error())
@@ -330,7 +324,6 @@ func UpdateImageOfNode(c *gin.Context) {
 		return
 	}
 	if !exist {
-		// 不存在节点，报错
 		flog.Log.Errorf("UpdateInfoOfNode err: %s", "content node not found")
 		resp.Error = Error(ContentNodeNotFound, "")
 		return
@@ -357,7 +350,6 @@ func UpdateImageOfNode(c *gin.Context) {
 			return
 		}
 
-		// 更新
 		err = after.UpdateImage()
 		if err != nil {
 			flog.Log.Errorf("UpdateNode err:%s", err.Error())
@@ -399,7 +391,6 @@ func UpdateStatusOfNode(c *gin.Context) {
 	n.Id = req.Id
 	n.UserId = uu.Id
 
-	// 获取节点，节点会携带所有内容
 	exist, err := n.Get()
 	if err != nil {
 		flog.Log.Errorf("UpdateStatusOfNode err: %s", err.Error())
@@ -407,7 +398,6 @@ func UpdateStatusOfNode(c *gin.Context) {
 		return
 	}
 	if !exist {
-		// 不存在节点，报错
 		flog.Log.Errorf("UpdateStatusOfNode err: %s", "content node not found")
 		resp.Error = Error(ContentNodeNotFound, "")
 		return
@@ -418,7 +408,6 @@ func UpdateStatusOfNode(c *gin.Context) {
 	after.Id = n.Id
 	after.Status = req.Status
 
-	// 更新
 	err = after.UpdateStatus()
 	if err != nil {
 		flog.Log.Errorf("UpdateStatusOfNode err:%s", err.Error())
@@ -464,7 +453,6 @@ func UpdateParentOfNode(c *gin.Context) {
 	n.Id = req.Id
 	n.UserId = uu.Id
 
-	// 获取节点，节点会携带所有内容
 	exist, err := n.Get()
 	if err != nil {
 		flog.Log.Errorf("UpdateParentOfNode err: %s", err.Error())
@@ -473,13 +461,12 @@ func UpdateParentOfNode(c *gin.Context) {
 	}
 
 	if !exist {
-		// 不存在节点，报错
 		flog.Log.Errorf("UpdateParentOfNode err: %s", "content node not found")
 		resp.Error = Error(ContentNodeNotFound, "")
 		return
 	}
 
-	// 有儿子的节点不能成为儿子，毕竟只有两层
+	// Who has children can not be child due to we only design 2 level
 	childNum, err := n.CheckChildrenNum()
 	if err != nil {
 		flog.Log.Errorf("UpdateParentOfNode err: %s", err.Error())
@@ -500,17 +487,18 @@ func UpdateParentOfNode(c *gin.Context) {
 	after.Id = n.Id
 	after.SortNum = n.SortNum
 
-	// 成为根节点
+	// Let the node to be the first level
 	if req.ToBeRoot {
-		// 已经是了
+		// has been
 		if n.ParentNodeId == 0 {
 			resp.Flag = true
 			return
 		}
-		// 没有指定父亲节点，归零
+		// level first and parent zero
 		after.Level = 0
 		after.ParentNodeId = 0
 	} else {
+		// not change at all
 		if n.ParentNodeId == req.ParentNodeId {
 			resp.Flag = true
 			return
@@ -518,7 +506,7 @@ func UpdateParentOfNode(c *gin.Context) {
 
 		after.ParentNodeId = req.ParentNodeId
 
-		// 检查该父亲节点是否存在
+		// parent is exit?
 		exist, err := after.CheckParentValid()
 		if err != nil {
 			flog.Log.Errorf("UpdateParentOfNode err: %s", err.Error())
@@ -526,15 +514,15 @@ func UpdateParentOfNode(c *gin.Context) {
 			return
 		}
 		if !exist {
-			// 不存在父亲节点，报错
 			flog.Log.Errorf("UpdateParentOfNode err: %s", "parent content node not found")
 			resp.Error = Error(ContentParentNodeNotFound, "")
 			return
 		}
+
+		// set in to 1
 		after.Level = 1
 	}
 
-	// 更新
 	err = after.UpdateParent(beforeParentNode)
 	if err != nil {
 		flog.Log.Errorf("UpdateParentOfNode err:%s", err.Error())
@@ -548,8 +536,7 @@ type DeleteNodeRequest struct {
 	Id int64 `json:"id" validate:"required"`
 }
 
-// 删除节点
-// 删除的时候，后面的节点排序值要依次顶上
+// Delete node, those nodes after it will be auto sorted
 func DeleteNode(c *gin.Context) {
 	resp := new(Resp)
 	req := new(DeleteNodeRequest)
@@ -580,7 +567,6 @@ func DeleteNode(c *gin.Context) {
 	n.Id = req.Id
 	n.UserId = uu.Id
 
-	// 获取节点，节点会携带所有内容
 	exist, err := n.Get()
 	if err != nil {
 		flog.Log.Errorf("DeleteNode err: %s", err.Error())
@@ -588,13 +574,12 @@ func DeleteNode(c *gin.Context) {
 		return
 	}
 	if !exist {
-		// 不存在节点，报错
 		flog.Log.Errorf("DeleteNode err: %s", "content node not found")
 		resp.Error = Error(ContentNodeNotFound, "")
 		return
 	}
 
-	// 删除节点时节点下不能有节点
+	// can not delete when has node children
 	childNum, err := n.CheckChildrenNum()
 	if err != nil {
 		flog.Log.Errorf("DeleteNode err:%s", err.Error())
@@ -603,7 +588,6 @@ func DeleteNode(c *gin.Context) {
 	}
 
 	if childNum >= 1 {
-		// 不能删除
 		flog.Log.Errorf("DeleteNode err:%s", "has node child")
 		resp.Error = Error(ContentNodeHasChildren, "")
 		return
@@ -613,7 +597,7 @@ func DeleteNode(c *gin.Context) {
 	content.UserId = uu.Id
 	content.NodeId = n.Id
 
-	// 删除节点时，节点下不能有内容
+	// can not delete when has content
 	normalContentNum, err := content.CountNumUnderNode()
 	if err != nil {
 		flog.Log.Errorf("DeleteNode err:%s", err.Error())
@@ -622,7 +606,6 @@ func DeleteNode(c *gin.Context) {
 	}
 
 	if normalContentNum >= 1 {
-		// 有内容，不能删除
 		flog.Log.Errorf("DeleteNode err:%s", "has content child")
 		resp.Error = Error(ContentNodeHasContentCanNotDelete, "")
 		return
@@ -638,7 +621,7 @@ func DeleteNode(c *gin.Context) {
 		return
 	}
 
-	// 同一层的大于删除节点排序的节点-1 ,依次顶上
+	// sort_num-1 in the same level, replace the delete's node position
 	_, err = session.Exec("update fafacms_content_node SET sort_num=sort_num-1 where sort_num > ? and user_id = ? and parent_node_id = ?", n.SortNum, n.UserId, n.ParentNodeId)
 	if err != nil {
 		session.Rollback()
@@ -647,7 +630,6 @@ func DeleteNode(c *gin.Context) {
 		return
 	}
 
-	// 可以删除了
 	_, err = session.Where("id=?", n.Id).Delete(new(model.ContentNode))
 	if err != nil {
 		session.Rollback()
@@ -740,7 +722,7 @@ func TakeNode(c *gin.Context) {
 	f.ParentNodeId = v.ParentNodeId
 	f.Status = v.Status
 
-	// 是顶层且需要列出儿子
+	// is the root level and want list son
 	if f.Level == 0 && req.ListSon {
 		ns := make([]model.ContentNode, 0)
 		err = model.FafaRdb.Client.Where("parent_node_id=?", f.Id).Find(&ns)
@@ -795,7 +777,6 @@ func ListNodeAdmin(c *gin.Context) {
 	ListNodeHelper(c, 0)
 }
 
-// 可以查别人的节点
 func ListNodeHelper(c *gin.Context, userId int64) {
 	resp := new(Resp)
 

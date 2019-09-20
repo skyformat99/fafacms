@@ -13,6 +13,7 @@ import (
 
 var TimeZone int64 = 0
 
+// Local time format you know
 func GetSecond2DateTimes(second int64) string {
 	second = second + 3600*TimeZone
 	tm := time.Unix(second, 0)

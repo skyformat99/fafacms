@@ -22,7 +22,7 @@ func ToLower(s string) string {
 }
 
 // change by python
-func DevideStringList(files []string, num int) (map[int][]string, error) {
+func DivideStringList(files []string, num int) (map[int][]string, error) {
 	length := len(files)
 	split := map[int][]string{}
 	if num <= 0 {

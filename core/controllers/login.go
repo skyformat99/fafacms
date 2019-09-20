@@ -88,10 +88,14 @@ func Login(c *gin.Context) {
 	u.Id = uu.Id
 	u.LoginIp = c.ClientIP()
 	u.LoginTime = time.Now().Unix()
+
+	// Update the login ip into db
 	u.UpdateLoginInfo()
+
+	// Refresh the user info in session(redis)
 	session.FafaSessionMgr.RefreshUser([]int64{u.Id})
 
-	// 就算未激活，或者黑名单都可以登录，但授权的API无法使用，激活用户的时候session会生成一个新的，即新的token，并且用户缓存会刷新
+	// Not activate or black user can login, but those auth api can not use
 	token, err := SetUserSession(uu)
 	if err != nil {
 		flog.Log.Errorf("login err:%s", err.Error())

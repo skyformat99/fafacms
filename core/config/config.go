@@ -9,18 +9,19 @@ import (
 )
 
 var (
-	//  global config
-	FafaConfig *Config
+	//  Global config!
+	FaFaConfig *Config
 )
 
 type Config struct {
-	DefaultConfig MyConfig
-	OssConfig     oss.Key
-	DbConfig      rdb.MyDbConfig
-	SessionConfig kv.MyRedisConf
-	MailConfig    mail.Sender `json:"Email"`
+	DefaultConfig MyConfig                   // default config
+	OssConfig     oss.Key                    // oss like aws s3
+	DbConfig      rdb.MyDbConfig             // mysql config
+	SessionConfig kv.MyRedisConf             // redis config for user session
+	MailConfig    mail.Sender `json:"Email"` // email config
 }
 
+// Some especial my config
 type MyConfig struct {
 	WebPort       string
 	LogPath       string
@@ -30,6 +31,7 @@ type MyConfig struct {
 	CloseRegister bool
 }
 
+// Let the config struct to json file, just for test
 func JsonOutConfig(config Config) (string, error) {
 	raw, err := json.Marshal(config)
 	if err != nil {

@@ -42,7 +42,7 @@ func GetBinaryCurrentPath() (string, error) {
 		i = strings.LastIndex(path, "\\")
 	}
 	if i < 0 {
-		return "", errors.New(`error: Can't find "/" or "\".`)
+		return "", errors.New(`error: Can't find "/" or "\"`)
 	}
 	return string(path[0 : i+1]), nil
 }
@@ -76,15 +76,15 @@ func Rename(oldfilename string, newfilename string) error {
 	return os.Rename(oldfilename, newfilename)
 }
 
-//根据传入文件夹名字递归新建文件夹
-//Create dir by recursion
+// 根据传入文件夹名字递归新建文件夹
+// Create dir by recursion
 func MakeDir(filedir string) error {
 	return os.MkdirAll(filedir, 0777)
 }
 
-//根据传入文件名，递归创建文件夹
+// 根据传入文件名，递归创建文件夹
 // ./dir/filename  /home/dir/filename
-//Create dir by the filename
+// Create dir by the filename
 func MakeDirByFile(filepath string) error {
 	temp := strings.Split(filepath, "/")
 	if len(temp) <= 2 {

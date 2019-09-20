@@ -32,7 +32,7 @@ var FileAllow = map[string][]string{
 		"wav", "wma", "wmv", "mid", "avi", "mpg", "asf", "rm", "rmvb",
 		"doc", "docx", "xls", "xlsx", "ppt", "htm", "html", "txt", "zip", "rar", "gz", "bz2"}}
 
-var FileBytes = 1 << 25 // (1<<25)/1000.0/1000.0 33.54 不能超出33M
+var FileBytes = 1 << 25 // (1<<25)/1000.0/1000.0 33.54 size can not beyond 33M
 
 type UploadResponse struct {
 	FileName       string `json:"file_name"`
@@ -46,9 +46,9 @@ type UploadResponse struct {
 }
 
 /*
-	file: 文件form名称
-	type: 上传类型，分别为image、flash、media、file、other
-	describe: 备注
+	file: the binary file of HTML form's name
+	type: can be: image、flash、media、file、other
+	describe: some describe of file
 */
 func UploadFile(c *gin.Context) {
 	resp := new(Resp)
@@ -77,6 +77,8 @@ func UploadFile(c *gin.Context) {
 	}
 
 	describe := c.DefaultPostForm("describe", "")
+
+	// Read binary file
 	h, err := c.FormFile("file")
 	if err != nil {
 		Log.Errorf("upload err:%s", err.Error())
@@ -104,7 +106,7 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// 打开文件流
+	// Open file
 	f, err := h.Open()
 	if err != nil {
 		Log.Errorf("upload err:%s", err.Error())
@@ -114,7 +116,7 @@ func UploadFile(c *gin.Context) {
 
 	defer f.Close()
 
-	// 读取二进制
+	// Read binary
 	raw, err := ioutil.ReadAll(f)
 	if err != nil {
 		Log.Errorf("upload err:%s", err.Error())
@@ -122,7 +124,7 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// 二进制空那么报错
+	// When raw bytes empty will occur err
 	fileSize := len(raw)
 	if fileSize == 0 {
 		Log.Errorf("upload err:%s", "file empty")
@@ -130,7 +132,7 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// HashCode
+	// HashCode the raw bytes
 	fileHashCode, err := myutil.Sha256(raw)
 	if err != nil {
 		Log.Errorf("upload err:%s", err.Error())
@@ -138,11 +140,11 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// MD5需要再加上用户唯一标志，方便不同用户可以上传一样的文件
+	// HashCode add a prefix of userName, so diff user can upload the same file but the same user will still keep one file
 	fileHashCode = uName + "_" + fileHashCode
 	fileName := fileHashCode + "." + fileSuffix
 
-	// 判断数据库文件是否存在
+	// If db exist the hash code of file
 	p := new(model.File)
 	p.HashCode = fileHashCode
 	exist, err := p.Get()
@@ -151,15 +153,15 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// 文件不存在
 	helpPath := fmt.Sprintf("storage/%s/%s", uName, fileType)
 	if !exist {
-		fileDir := filepath.Join(config.FafaConfig.DefaultConfig.StoragePath, uName, fileType)
+		// File not exist, save it
+		fileDir := filepath.Join(config.FaFaConfig.DefaultConfig.StoragePath, uName, fileType)
 		fileAbName := filepath.Join(fileDir, fileName)
 
-		// 本地存储模式
-		if config.FafaConfig.DefaultConfig.StorageOss != true {
-			// 磁盘模式
+		// Local mode will save in disk
+		if config.FaFaConfig.DefaultConfig.StorageOss != true {
+			// disk mode first make dir
 			err := myutil.MakeDir(fileDir)
 			if err != nil {
 				Log.Errorf("upload err:%s", err.Error())
@@ -176,10 +178,10 @@ func UploadFile(c *gin.Context) {
 
 			p.Url = fmt.Sprintf("/%s/%s", helpPath, fileName)
 		} else {
-			// 阿里OSS模式
+			// Oss mode
 			p.StoreType = 1
-			p.Url = fmt.Sprintf("%s.%s/%s/%s", config.FafaConfig.OssConfig.BucketName, config.FafaConfig.OssConfig.Endpoint, helpPath, fileName)
-			err = oss.SaveFile(config.FafaConfig.OssConfig, p.Url, raw)
+			p.Url = fmt.Sprintf("%s.%s/%s/%s", config.FaFaConfig.OssConfig.BucketName, config.FaFaConfig.OssConfig.Endpoint, helpPath, fileName)
+			err = oss.SaveFile(config.FaFaConfig.OssConfig, p.Url, raw)
 			if err != nil {
 				Log.Errorf("upload err:%s", err.Error())
 				resp.Error = Error(UploadFileError, err.Error())
@@ -189,16 +191,16 @@ func UploadFile(c *gin.Context) {
 
 		p.UrlHashCode, _ = myutil.Sha256([]byte(p.Url))
 
-		// 如果是图片进行裁剪
+		// If is picture, cut the size
 		if myutil.InArray(scaleType, fileSuffix) {
 			p.IsPicture = 1
 
-			// 本地存储模式，裁剪图静态路径为  /storage_x
-			if config.FafaConfig.DefaultConfig.StorageOss != true {
-				fileScaleDir := filepath.Join(config.FafaConfig.DefaultConfig.StoragePath+"_x", uName, fileType)
+			// Local disk mode，cut the picture and save in  /storage_x
+			if config.FaFaConfig.DefaultConfig.StorageOss != true {
+				fileScaleDir := filepath.Join(config.FaFaConfig.DefaultConfig.StoragePath+"_x", uName, fileType)
 				fileScaleAbName := filepath.Join(fileScaleDir, fileName)
 
-				// 裁剪
+				// scale cut cut
 				err = myutil.MakeDir(fileScaleDir)
 				if err != nil {
 					Log.Errorf("upload err:%s", err.Error())
@@ -212,7 +214,7 @@ func UploadFile(c *gin.Context) {
 					return
 				}
 			} else {
-				// 阿里OSS模式
+				// OSS again
 				outRaw, err := go_image.ScaleB2B(raw, 200)
 				if err != nil {
 					Log.Errorf("upload err:%s", err.Error())
@@ -220,7 +222,7 @@ func UploadFile(c *gin.Context) {
 					return
 				}
 
-				err = oss.SaveFile(config.FafaConfig.OssConfig, strings.Replace(helpPath, "storage/", "storage_x/", -1)+"/"+fileName, outRaw)
+				err = oss.SaveFile(config.FaFaConfig.OssConfig, strings.Replace(helpPath, "storage/", "storage_x/", -1)+"/"+fileName, outRaw)
 				if err != nil {
 					Log.Errorf("upload err:%s", err.Error())
 					resp.Error = Error(UploadFileError, err.Error())
@@ -245,16 +247,16 @@ func UploadFile(c *gin.Context) {
 			return
 		}
 	} else {
-		// 文件存在
+		// File exist
 		data.Addon = "file the same in server"
 		if p.Status != 0 {
-			// 如果被隐藏了额，应该改回来
+			// If file is hide must change back
 			p.Status = 0
 			p.UpdateStatus()
 		}
 	}
 
-	// 返回基本信息
+	// Return all basic info
 	data.FileName = p.FileName
 	data.ReallyFileName = p.ReallyFileName
 	data.IsPicture = p.IsPicture == 1
@@ -333,7 +335,7 @@ func ListFileAdminHelper(c *gin.Context, userId int64) {
 	}
 
 	if req.Status != -1 {
-		// 只要不暴露这个参数的话，那些隐藏的文件不会被用户看到
+		// this not expose out, all people well see the file in show, those hide will emm, hide.
 		session.And("status=?", req.Status)
 	}
 
@@ -427,12 +429,12 @@ func ListFileAdminHelper(c *gin.Context, userId int64) {
 	resp.Flag = true
 }
 
-// 列出所有用户的文件信息，管理员权限
+// List all file info of all user, admin url
 func ListFileAdmin(c *gin.Context) {
 	ListFileAdminHelper(c, 0)
 }
 
-// 列出自己的文件
+// list file of oneself
 func ListFile(c *gin.Context) {
 	resp := new(Resp)
 	uu, err := GetUserSession(c)
@@ -474,14 +476,15 @@ func UpdateFileAdminHelper(c *gin.Context, userId int64) {
 		return
 	}
 
-	// 可以修改文件Tag和描述，方便分组
 	f := new(model.File)
 	f.Id = req.Id
+
+	// can change file tag so can group out
 	f.Tag = req.Tag
 	f.Describe = req.Describe
 	f.UserId = userId
 
-	// 更改文件，可以将文件设置为隐藏，文件一旦上传，不能删除
+	// can set the file hide but it is pretend hide still exist
 	ok, err := f.Update(req.Hide)
 	if err != nil {
 		Log.Errorf("UpdateFileAdmin err:%s", err.Error())
@@ -493,12 +496,12 @@ func UpdateFileAdminHelper(c *gin.Context, userId int64) {
 	resp.Flag = true
 }
 
-// 可以更改其他人的文件信息，管理员权限
+// update file info or every user, admin url
 func UpdateFileAdmin(c *gin.Context) {
 	UpdateFileAdminHelper(c, 0)
 }
 
-// 更新自己的文件信息
+// update file info of oneself
 func UpdateFile(c *gin.Context) {
 	resp := new(Resp)
 	uu, err := GetUserSession(c)

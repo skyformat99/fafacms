@@ -26,7 +26,7 @@ func InitConfig(configFilePath string) error {
 	}
 
 	c.DbConfig.Prefix = "fafacms_"
-	config.FafaConfig = c
+	config.FaFaConfig = c
 	return nil
 }
 

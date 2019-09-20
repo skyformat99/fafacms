@@ -34,7 +34,7 @@ func Server() *gin.Engine {
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	r.Use(gin.Recovery())
 
-	//解决浏览器跨域问题
+	// Solve Cross
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc:  func(origin string) bool { return true },
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH"},

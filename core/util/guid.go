@@ -25,7 +25,7 @@ func BuildTime() string {
 	return t.UTC().Format("20060102_15:04:05_UTC")
 }
 
-// GetGUID 生成GUID
+// GetGUID
 func GetGUID() (valueGUID string) {
 	objID, _ := uuid.NewV4()
 	objidStr := objID.String()
@@ -34,7 +34,7 @@ func GetGUID() (valueGUID string) {
 	return valueGUID
 }
 
-// sha256  256 bit防止碰撞
+// sha256 256 bit
 func Sha256(raw []byte) (string, error) {
 	h := sha256.New()
 	num, err := h.Write(raw)

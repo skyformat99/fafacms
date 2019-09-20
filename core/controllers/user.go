@@ -39,7 +39,7 @@ func RegisterUser(c *gin.Context) {
 	}()
 
 	// 配置如果关闭注册，那么直接返回
-	if config.FafaConfig.DefaultConfig.CloseRegister {
+	if config.FaFaConfig.DefaultConfig.CloseRegister {
 		resp.Error = Error(CloseRegisterError, "")
 		return
 	}
@@ -124,7 +124,7 @@ func RegisterUser(c *gin.Context) {
 
 	// send email
 	mm := new(mail.Message)
-	mm.Sender = config.FafaConfig.MailConfig
+	mm.Sender = config.FaFaConfig.MailConfig
 	mm.To = u.Email
 	mm.ToName = u.NickName
 	mm.Body = fmt.Sprintf(mm.Body, "Register", u.ActivateCode)
@@ -405,7 +405,7 @@ func ResendActivateCodeToUser(c *gin.Context) {
 
 	// send email
 	mm := new(mail.Message)
-	mm.Sender = config.FafaConfig.MailConfig
+	mm.Sender = config.FaFaConfig.MailConfig
 	mm.To = u.Email
 	mm.ToName = u.NickName
 	mm.Body = fmt.Sprintf(mm.Body, "Register", u.ActivateCode)
@@ -470,7 +470,7 @@ func ForgetPasswordOfUser(c *gin.Context) {
 
 		// send email
 		mm := new(mail.Message)
-		mm.Sender = config.FafaConfig.MailConfig
+		mm.Sender = config.FaFaConfig.MailConfig
 		mm.To = u.Email
 		mm.ToName = u.NickName
 		mm.Body = fmt.Sprintf(mm.Body, "Forget Password", u.ResetCode)

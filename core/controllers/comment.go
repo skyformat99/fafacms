@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// comment escape
 var htmlEscaper = strings.NewReplacer(
 	`<`, "&lt;",
 	`>`, "&gt;",

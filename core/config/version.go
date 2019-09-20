@@ -1,5 +1,6 @@
 package config
 
 const (
-	Title = "FaFa CMS"
+	Title   = "FaFa CMS"
+	Version = "2.0.0"
 )

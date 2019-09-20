@@ -19,14 +19,14 @@ var (
 
 // diy user redis
 type TokenManage interface {
-	CheckToken(token string) (user *model.User, err error)                 // 检查令牌是否存在, 返回redis用户，redis用户不存在缓存击穿到mysql，mysql不存在删除该用户所有令牌
-	SetToken(user *model.User, validTimes int64) (token string, err error) // 设置令牌，登录或者激活用户的时候，有效期7天，每次都是强覆盖
-	RefreshToken(token string) error                                       // 刷新令牌，每次浏览器启动时，自己保持的cookie请求延长令牌时间
-	DeleteToken(token string) error                                        // 删除令牌，在退出登录的时候
-	RefreshUser(id []int64) error                                          // 刷新用户缓存信息
-	DeleteUserToken(id int64) error                                        // 删除一个用户下面所有的临时令牌，在用户修改密码的情况
-	DeleteUser(id int64) error                                             // 删除缓存中的用户信息，当用户被删除的时候应该删除
-	AddUser(id int64) (user *model.User, err error)                        // 增加缓存mysql用户到redis，有效期1天
+	CheckToken(token string) (user *model.User, err error)                 // Check the token, when redis exist direct return user info, others hit the mysql db and save in redis then return
+	SetToken(user *model.User, validTimes int64) (token string, err error) // Set token, expire 7 days
+	RefreshToken(token string) error                                       // Refresh token，token expire time will be again 7 days
+	DeleteToken(token string) error                                        // Delete token when logout
+	RefreshUser(id []int64) error                                          // Refresh redis cache of user info
+	DeleteUserToken(id int64) error                                        // Delete all token of those user
+	DeleteUser(id int64) error                                             // Delete user info in redis cache
+	AddUser(id int64) (user *model.User, err error)                        // Add the user info to session redis，expire days:7
 }
 
 type RedisSession struct {

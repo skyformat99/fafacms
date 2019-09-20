@@ -7,10 +7,9 @@
 	Attribution-NonCommercial-NoDerivatives 4.0 International
 	You can use it for education only but can't make profits for any companies and individuals!
 
-    2019-4-24：
+	The Door of the program
 
-	程序主入口
-	花花CMS是一个内容管理系统，代码尽可能地补充必要注释，方便后人协作
+	FaFa awesome!
 **/
 package main
 
@@ -30,49 +29,53 @@ import (
 )
 
 var (
-	version = "2.0.0"
-
-	// 全局配置文件路径
+	// Global path of config file
 	configFile string
 
-	// 是否创建数据库表
+	// Auto create database and tables when set true
 	createTable bool
 
-	// 开发时每次都发邮件的形式不好，可以先调试模式
+	// Email debug will not send email
 	mailDebug bool
 
-	// 跳过授权，某些超级管理接口需要绑定组和路由，可以先开调试模式
+	// Skip some admin Auth when debug
 	canSkipAuth bool
 
-	// 是否内容刷新进历史表进行保存
+	// Record the history of content when edit or publish
 	historyRecord bool
 
-	// 与UTC的时区偏移量
+	// Time zone offset the utc, default is 8,Beijing
 	timeZone int64
 
-	// 举报次数，大于此次数自动违禁
+	// Auto ban the content or comment
 	autoBan bool
+
+	// Beyond and autoBan is true will Ban it!
 	banTime int64
 )
 
-// 初始化时解析命令行，辅助程序
-// 这些调试参数不置于文件配置中
+// Parse flag when init
+// Those variables will not config in file
 func init() {
-	// 默认读取本路径下 ./config.json 配置
+	// Default read ./config.json
 	flag.StringVar(&configFile, "config", "./config.json", "config file")
+
+	// Auto init db
+	flag.BoolVar(&createTable, "init_db", true, "create db table")
+
 	flag.Int64Var(&timeZone, "time_zone", 8, "time zone offset the utc")
 	flag.BoolVar(&autoBan, "auto_ban", false, "auto ban the content or comment")
 	flag.Int64Var(&banTime, "ban_time", 10, "how much time to bad a content or comment will ban it")
+	flag.BoolVar(&historyRecord, "history_record", true, "Content history record")
 
-	// 正式部署时，请全部设置为 false
-	flag.BoolVar(&createTable, "init_db", true, "create db table")
+	// When in production, please set to all false
 	flag.BoolVar(&mailDebug, "email_debug", false, "Email debug")
 	flag.BoolVar(&canSkipAuth, "auth_skip_debug", false, "Auth skip debug")
-	flag.BoolVar(&historyRecord, "history_record", true, "Content history record")
+
 	flag.Parse()
 }
 
-// 初始化URL资源
+// Init the URL resource, some admin url put inside a map will save a lot of time
 func initResource() (adminUrl map[string]int64) {
 	adminUrl = make(map[string]int64)
 	for url, handler := range router.V1Router {
@@ -88,6 +91,7 @@ func initResource() (adminUrl map[string]int64) {
 			panic(err)
 		}
 
+		// Exist will put in map, otherwise save in db then put in map
 		if exist {
 			adminUrl[url1] = r.Id
 			continue
@@ -109,11 +113,11 @@ func initResource() (adminUrl map[string]int64) {
 	return adminUrl
 }
 
-// 入口
-// 欢迎查看优美代码，我是花花
+// The Beauty Main
+// I'm FaFa
 func main() {
 
-	// 将调试参数跨包注入
+	// Package var init
 	mail.Debug = mailDebug
 	controllers.AuthDebug = canSkipAuth
 	controllers.TimeZone = timeZone
@@ -123,54 +127,53 @@ func main() {
 
 	var err error
 
-	// 初始化全局配置
+	// Init global config
 	err = server.InitConfig(configFile)
 	if err != nil {
 		panic(err)
 	}
 
-	// 初始化日志
-	flog.InitLog(config.FafaConfig.DefaultConfig.LogPath)
+	// Init log
+	flog.InitLog(config.FaFaConfig.DefaultConfig.LogPath)
 
-	// 如果全局调试，那么所有DEBUG以上级别日志将会打印
-	// 实际情况下，最好设置为 true，
-	if config.FafaConfig.DefaultConfig.LogDebug {
+	// Log can set to debug, i suggest not to change it
+	if config.FaFaConfig.DefaultConfig.LogDebug {
 		flog.SetLogLevel("DEBUG")
 	}
 
 	welcome()
-	flog.Log.Debugf("Hi! Config is %#v", config.FafaConfig)
+	flog.Log.Debugf("Hi! Config is %#v", config.FaFaConfig)
 
-	// 初始化数据库连接
-	err = server.InitRdb(config.FafaConfig.DbConfig)
+	// Init db
+	err = server.InitRdb(config.FaFaConfig.DbConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	// 初始化网站Session存储
-	err = session.InitSession(config.FafaConfig.SessionConfig)
+	// Init session
+	err = session.InitSession(config.FaFaConfig.SessionConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	// 创建数据库表，需要先手动创建DB
+	// Auto create db table
 	if createTable {
 		model.CreateTable([]interface{}{
-			model.User{},           // 用户表
-			model.Group{},          // 用户组表，用户可以拥有一个组
-			model.Resource{},       // 资源表，主要为需要管理员权限的路由服务
-			model.GroupResource{},  // 组可以被分配资源
-			model.Content{},        // 内容表
-			model.ContentCool{},    // 内容点赞表
-			model.ContentBad{},     // 内容举报表
-			model.ContentHistory{}, // 内容历史表
-			model.ContentNode{},    // 内容节点表，内容必须拥有一个节点
-			model.File{},           // 文件表
-			model.Comment{},        // 评论表
-			model.CommentCool{},    // 评论点赞表
-			model.CommentBad{},     // 评论举报表
-			//model.Message{},        // 站内信表
-			//model.Log{},            // 日志表
+			model.User{},           // User Table
+			model.Group{},          // User Group, every user can assign a group
+			model.Resource{},       // Url Resource, if user not own those will be refuse to auth
+			model.GroupResource{},  // Resource will be assign to group
+			model.Content{},        // Content Table, very import
+			model.ContentCool{},    // Content Cool, user can cool your content
+			model.ContentBad{},     // Content Bad, user can bad your content and if auto ban, your content will be ban
+			model.ContentHistory{}, // Content History, when publish or edit a content, and you set history record, emm, save it
+			model.ContentNode{},    // Contents' Node, every content must belong to a node
+			model.File{},           // File Table, your picture file and some will save in.
+			model.Comment{},        // Comment Table, comment for content, comment for comment
+			model.CommentCool{},    // Like the Content Cool
+			model.CommentBad{},     // Emm, you know
+			//model.Message{},        // Message inside
+			//model.Log{},            // Log Table, not use
 		})
 	}
 
@@ -180,8 +183,8 @@ func main() {
 	engine := server.Server()
 
 	// Storage static API
-	engine.Static("/storage", config.FafaConfig.DefaultConfig.StoragePath)
-	engine.Static("/storage_x", config.FafaConfig.DefaultConfig.StoragePath+"_x")
+	engine.Static("/storage", config.FaFaConfig.DefaultConfig.StoragePath)
+	engine.Static("/storage_x", config.FaFaConfig.DefaultConfig.StoragePath+"_x")
 
 	// Web welcome home!
 	router.SetRouter(engine)
@@ -193,8 +196,8 @@ func main() {
 	// Router Set
 	router.SetAPIRouter(v1, router.V1Router)
 
-	flog.Log.Noticef("Server run in %s", config.FafaConfig.DefaultConfig.WebPort)
-	err = engine.Run(config.FafaConfig.DefaultConfig.WebPort)
+	flog.Log.Noticef("Server run in %s", config.FaFaConfig.DefaultConfig.WebPort)
+	err = engine.Run(config.FaFaConfig.DefaultConfig.WebPort)
 	if err != nil {
 		panic(err)
 	}
@@ -209,5 +212,5 @@ func welcome() {
 ██╔══╝  ██╔══██║██╔══╝  ██╔══██║██║     ██║╚██╔╝██║╚════██║
 ██║     ██║  ██║██║     ██║  ██║╚██████╗██║ ╚═╝ ██║███████║
 ╚═╝     ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚═╝     ╚═╝╚══════╝`
-	flog.Log.Noticef("\n%s-v%s_%s\n", s, version, util.BuildTime())
+	flog.Log.Noticef("\n%s-v%s_%s\n", s, config.Version, util.BuildTime())
 }

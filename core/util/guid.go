@@ -28,9 +28,9 @@ func BuildTime() string {
 // GetGUID
 func GetGUID() (valueGUID string) {
 	objID, _ := uuid.NewV4()
-	objidStr := objID.String()
-	objidStr = strings.Replace(objidStr, "-", "", -1)
-	valueGUID = objidStr
+	objIdStr := objID.String()
+	objIdStr = strings.Replace(objIdStr, "-", "", -1)
+	valueGUID = objIdStr
 	return valueGUID
 }
 

@@ -10,6 +10,8 @@
 
 [English](/README_EN.md)
 
+💐:[APP/WEB SEE HEAR](https://github.com/hunterhug/fafafront)
+
 ## 项目说明
 
 此项目代号为 `fafacms`。花花拼音 `fafa`，名称来源于广东话发发，花花的谐音，听起来有诙谐，娱乐等感觉，是一个使用 `Golang` 开发的前后端分离 --> 内容管理系统(CMS)。
@@ -28,7 +30,7 @@
 9. 关注好友，好友发布内容站内信通知。
 10. 私信。
 
-需求时刻迭代，最新更新参见[产品更新记录](/log.md)，待处理事宜参见[待做清单](/todo.md)。详细设计，约束请参考实际[API文档](https://github.com/hunterhug/fafadoc)，及可用产品:[前端-完善过程中](https://github.com/hunterhug/fafafront)
+需求时刻迭代，最新更新参见[产品更新记录](/log.md)，待处理事宜参见[待做清单](/todo.md)。详细设计，约束请参考实际[API文档](https://github.com/hunterhug/fafadoc)。
 。
 
 ## 写给前端人员

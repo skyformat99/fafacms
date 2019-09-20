@@ -85,7 +85,9 @@ func CreateComment(c *gin.Context) {
 			}
 			cm := new(model.Comment)
 			cm.ContentId = content.Id
+			cm.ContentTitle = content.Title
 			cm.ContentUserId = content.UserId
+			cm.ContentUserName = content.UserName
 			cm.UserId = uu.Id
 			cm.UserName = uu.Name
 			cm.Describe = req.Body
@@ -169,6 +171,8 @@ func CreateComment(c *gin.Context) {
 	newComment := new(model.Comment)
 	newComment.ContentId = content.Id
 	newComment.ContentUserId = content.UserId
+	newComment.ContentUserName = content.UserName
+	newComment.ContentTitle = content.Title
 	newComment.UserId = uu.Id
 	newComment.Describe = req.Body
 	if targetComment.CommentType == model.CommentTypeOfContent {
@@ -271,10 +275,6 @@ func TakeComment(c *gin.Context) {
 	resp := new(Resp)
 	req := new(TakeCommentRequest)
 	defer func() {
-		JSONL(c, 200, nil, resp)
-	}()
-
-	defer func() {
 		JSONL(c, 200, req, resp)
 	}()
 
@@ -304,7 +304,12 @@ func TakeComment(c *gin.Context) {
 		return
 	}
 
+	if comment.Status == 1 {
+		comment.Describe = model.CommentBanDescribe
+	}
+
 	users := make(map[int64]*model.User)
+
 	if comment.CommentAnonymous != model.CommentAnonymous {
 		user := new(model.User)
 		user.Id = comment.UserId
@@ -316,13 +321,12 @@ func TakeComment(c *gin.Context) {
 		}
 
 		if ok {
-			comment.HelperUserNickName = user.NickName
+			comment.HelperUser = model.GetUserHelper(user)
 			users[comment.UserId] = user
 		}
-	} else {
-		comment.HelperUserNickName = ""
 	}
 
+	// get the content
 	content := new(model.Content)
 	content.Id = comment.ContentId
 	ok, err = content.GetByRaw()
@@ -333,13 +337,122 @@ func TakeComment(c *gin.Context) {
 	}
 
 	if ok {
-		comment.HelperContentTitle = content.Title
+		comment.ContentTitle = content.Title
+	} else {
+		// content deleted
+		comment.ContentTitle = model.CommentContentDeleteDescribe
 	}
 
-	if comment.Status == model.CommentTypeOfRootComment {
-		cm := new(model.Comment)
-		cm.ContentId = comment.RootCommentId
+	if u, ok := users[comment.ContentUserId]; ok {
+		comment.HelperContentUser = model.GetUserHelper(u)
+	} else {
+		user := new(model.User)
+		user.Id = comment.ContentUserId
+		ok, err := user.GetRaw()
+		if err != nil {
+			flog.Log.Errorf("TakeComment err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+
+		if ok {
+			comment.HelperContentUser = model.GetUserHelper(user)
+			users[comment.ContentUserId] = user
+		}
 	}
+
+	if comment.CommentType >= model.CommentTypeOfRootComment {
+		cm := new(model.Comment)
+		cm.Id = comment.RootCommentId
+		ok, err := cm.Get()
+		if err != nil {
+			flog.Log.Errorf("TakeComment err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+
+		if ok {
+			if cm.IsDelete == 1 {
+				comment.HelperRootCommentDescribe = model.CommentDeleteDescribe
+			} else {
+				if cm.Status == 1 {
+					comment.HelperRootCommentDescribe = model.CommentBanDescribe
+				} else {
+					comment.HelperRootCommentDescribe = cm.Describe
+				}
+			}
+		} else {
+			comment.HelperRootCommentDescribe = model.CommentDeleteDescribe
+		}
+
+		if cm.CommentAnonymous != model.CommentAnonymous {
+			if u, ok := users[comment.RootCommentUserId]; ok {
+				comment.HelperRootCommentUser = model.GetUserHelper(u)
+			} else {
+				user := new(model.User)
+				user.Id = comment.RootCommentUserId
+				ok, err := user.GetRaw()
+				if err != nil {
+					flog.Log.Errorf("TakeComment err: %s", err.Error())
+					resp.Error = Error(DBError, err.Error())
+					return
+				}
+
+				if ok {
+					comment.HelperRootCommentUser = model.GetUserHelper(user)
+					users[comment.RootCommentUserId] = user
+				}
+			}
+		}
+	}
+
+	if comment.CommentType > model.CommentTypeOfRootComment {
+		cm := new(model.Comment)
+		cm.Id = comment.CommentId
+		ok, err := cm.Get()
+		if err != nil {
+			flog.Log.Errorf("TakeComment err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+
+		if ok {
+			if cm.IsDelete == 1 {
+				comment.HelperCommentDescribe = model.CommentDeleteDescribe
+			} else {
+				if cm.Status == 1 {
+					comment.HelperCommentDescribe = model.CommentBanDescribe
+				} else {
+					comment.HelperCommentDescribe = cm.Describe
+				}
+			}
+		} else {
+			comment.HelperCommentDescribe = model.CommentDeleteDescribe
+		}
+
+		if cm.CommentAnonymous != model.CommentAnonymous {
+			if u, ok := users[comment.CommentUserId]; ok {
+				comment.HelperCommentUser = model.GetUserHelper(u)
+			} else {
+				user := new(model.User)
+				user.Id = comment.CommentUserId
+				ok, err := user.GetRaw()
+				if err != nil {
+					flog.Log.Errorf("TakeComment err: %s", err.Error())
+					resp.Error = Error(DBError, err.Error())
+					return
+				}
+
+				if ok {
+					comment.HelperCommentUser = model.GetUserHelper(user)
+					users[comment.CommentUserId] = user
+				}
+			}
+		}
+	}
+
+	resp.Flag = true
+	resp.Data = comment
 
 }
 

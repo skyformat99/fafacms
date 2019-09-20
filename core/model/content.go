@@ -56,6 +56,7 @@ type ContentHistory struct {
 	NodeId     int64  `json:"node_id" xorm:"bigint index"`
 	Describe   string `json:"describe" xorm:"TEXT"`
 	Types      int    `json:"types" xorm:"not null comment('0 update save, 1 publish, 2 restore') TINYINT(1)"`
+	Version    int    `json:"version"`
 	CreateTime int64  `json:"create_time"`
 }
 
@@ -99,8 +100,12 @@ func (c *Content) Get() (bool, error) {
 	return FaFaRdb.Client.Get(c)
 }
 
-func (c *Content) GetByRaw() (bool, error) {
+func (c *Content) GetByRawAll() (bool, error) {
 	return FaFaRdb.Client.Get(c)
+}
+
+func (c *Content) GetByRaw() (bool, error) {
+	return FaFaRdb.Client.Omit("pre_describe", "describe").Get(c)
 }
 
 func (c *Content) UpdateDescribeAndHistory(save bool) error {
@@ -322,7 +327,7 @@ func (c *Content) PublishDescribe() error {
 		history.Describe = c.PreDescribe
 		history.ContentId = c.Id
 		history.UserId = c.UserId
-
+		history.Version = c.Version + 1
 		history.Types = 1
 		_, err := session.InsertOne(history)
 		if err != nil {

@@ -11,38 +11,61 @@ const (
 	CommentTypeOfComment     = 2
 	CommentAnonymous         = 1
 
-	AnonymousUser = "void"
+	AnonymousUser                = "void"
+	CommentContentDeleteDescribe = "content deleted"
+	CommentDeleteDescribe        = "comment deleted"
+	CommentBanDescribe           = "comment ban"
 )
 
+type UserHelper struct {
+	Id        int64  `json:"id"`
+	Name      string `json:"name"`
+	NickName  string `json:"nick_name"`
+	HeadPhoto string `json:"head_photo"`
+}
+
+func GetUserHelper(u *User) *UserHelper {
+	if u == nil || u.Id == 0 {
+		return nil
+	}
+
+	uu := new(UserHelper)
+	uu.Id = u.Id
+	uu.NickName = u.NickName
+	uu.HeadPhoto = u.HeadPhoto
+	uu.Name = u.Name
+	return uu
+}
+
 type Comment struct {
-	Id                            int64  `json:"id" xorm:"bigint pk autoincr"`
-	UserId                        int64  `json:"user_id" xorm:"bigint index"`
-	UserName                      string `json:"user_name" xorm:"bigint index"`
-	HelperUserNickName            string `json:"user_nickname" xorm:"-"`
-	ContentId                     int64  `json:"content_id" xorm:"bigint index"`
-	HelperContentTitle            string `json:"content_title" xorm:"-"`
-	ContentUserId                 int64  `json:"content_user_id" xorm:"bigint index"`
-	ContentUserName               string `json:"content_user_name" xorm:"bigint index"`
-	HelperContentUserNickName     string `json:"content_user_nickname" xorm:"-"`
-	CommentId                     int64  `json:"comment_id,omitempty" xorm:"bigint index"`
-	HelperCommentDescribe         string `json:"comment_describe,omitempty" xorm:"-"`
-	CommentUserId                 int64  `json:"comment_user_id,omitempty" xorm:"bigint index"`
-	CommentUserName               string `json:"comment_user_name,omitempty" xorm:"bigint index"`
-	HelperCommentUserNickName     string `json:"comment_user_nickname,omitempty" xorm:"-"`
-	RootCommentId                 int64  `json:"root_comment_id,omitempty" xorm:"bigint index"`
-	HelperRootCommentDescribe     string `json:"root_comment_describe,omitempty" xorm:"-"`
-	RootCommentUserId             int64  `json:"root_comment_user_id,omitempty" xorm:"bigint index"`
-	RootCommentUserName           string `json:"root_comment_user_name,omitempty" xorm:"bigint index"`
-	HelperRootCommentUserNickName string `json:"root_comment_user_nickname,omitempty" xorm:"-"`
-	Describe                      string `json:"describe" xorm:"TEXT"`
-	CreateTime                    int64  `json:"create_time"`
-	Status                        int    `json:"status" xorm:"not null comment('0 normal, 1 ban') TINYINT(1) index"`
-	Cool                          int64  `json:"cool"`
-	Bad                           int64  `json:"bad"`
-	CommentType                   int    `json:"comment_type"`
-	CommentAnonymous              int    `json:"comment_anonymous"`
-	IsDelete                      int    `json:"is_delete,omitempty"`
-	DeleteTime                    int64  `json:"delete_time,omitempty"`
+	Id                        int64       `json:"id" xorm:"bigint pk autoincr"`
+	UserId                    int64       `json:"-" xorm:"bigint index"`
+	UserName                  string      `json:"-" xorm:"index"`
+	ContentId                 int64       `json:"content_id" xorm:"bigint index"`
+	ContentTitle              string      `json:"content_title"`
+	ContentUserId             int64       `json:"-" xorm:"bigint index"`
+	ContentUserName           string      `json:"-" xorm:"index"`
+	CommentId                 int64       `json:"comment_id,omitempty" xorm:"bigint index"`
+	CommentUserId             int64       `json:"-" xorm:"bigint index"`
+	CommentUserName           string      `json:"-" xorm:"index"`
+	RootCommentId             int64       `json:"root_comment_id,omitempty" xorm:"bigint index"`
+	RootCommentUserId         int64       `json:"-" xorm:"bigint index"`
+	RootCommentUserName       string      `json:"-" xorm:"xindex"`
+	HelperUser                *UserHelper `json:"user,omitempty" xorm:"-"`
+	HelperContentUser         *UserHelper `json:"comment_user,omitempty" xorm:"-"`
+	HelperRootCommentUser     *UserHelper `json:"root_comment_user,omitempty" xorm:"-"`
+	HelperCommentUser         *UserHelper `json:"comment_user,omitempty" xorm:"-"`
+	Describe                  string      `json:"describe" xorm:"TEXT"`
+	HelperRootCommentDescribe string      `json:"root_comment_describe,omitempty" xorm:"-"`
+	HelperCommentDescribe     string      `json:"comment_describe,omitempty" xorm:"-"`
+	CreateTime                int64       `json:"create_time"`
+	Status                    int         `json:"status" xorm:"not null comment('0 normal, 1 ban') TINYINT(1) index"`
+	Cool                      int64       `json:"cool"`
+	Bad                       int64       `json:"bad"`
+	CommentType               int         `json:"comment_type"`
+	CommentAnonymous          int         `json:"comment_anonymous"`
+	IsDelete                  int         `json:"is_delete,omitempty"`
+	DeleteTime                int64       `json:"delete_time,omitempty"`
 }
 
 type CommentCool struct {
@@ -68,6 +91,7 @@ func (c *Comment) InsertOne() error {
 		return err
 	}
 
+	c.CreateTime = time.Now().Unix()
 	num, err := se.InsertOne(c)
 	if err != nil {
 		se.Rollback()

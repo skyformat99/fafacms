@@ -794,7 +794,7 @@ func Content(c *gin.Context) {
 	content.UserId = req.UserId
 	content.UserName = req.UserName
 	content.Seo = req.Seo
-	exist, err := content.GetByRaw()
+	exist, err := content.GetByRawAll()
 	if err != nil {
 		flog.Log.Errorf("Content err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())

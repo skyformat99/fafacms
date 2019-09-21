@@ -361,3 +361,176 @@ func ListHomeComment(c *gin.Context) {
 		JSONL(c, 200, nil, resp)
 	}()
 }
+
+type CoolCommentRequest struct {
+	CommentId int64 `json:"id"`
+}
+
+func CoolComment(c *gin.Context) {
+	resp := new(Resp)
+	req := new(CoolCommentRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if req.CommentId == 0 {
+		flog.Log.Errorf("CoolComment err: %s", "comment_id empty")
+		resp.Error = Error(ParasError, "comment_id empty")
+		return
+	}
+
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("CoolComment err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	comment := new(model.Comment)
+	comment.Id = req.CommentId
+	ok, err := comment.Get()
+	if err != nil {
+		flog.Log.Errorf("CoolComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok || comment.IsDelete == 1 {
+		flog.Log.Errorf("CoolComment err: %s", "comment not found")
+		resp.Error = Error(ContentNotFound, "")
+		return
+	}
+
+	if comment.Status == 1 {
+		flog.Log.Errorf("CoolComment err: %s", "comment ban")
+		resp.Error = Error(CommentBanPermit, "")
+		return
+	}
+
+	cool := new(model.CommentCool)
+	cool.CommentId = req.CommentId
+	cool.UserId = uu.Id
+	ok, err = cool.Exist()
+	if err != nil {
+		flog.Log.Errorf("CoolComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	cool.ContentId = comment.ContentId
+
+	if ok {
+		err = cool.Delete()
+	} else {
+		err = cool.Create()
+	}
+
+	if err != nil {
+		flog.Log.Errorf("CoolContent err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+	}
+
+	resp.Flag = true
+	if ok {
+		resp.Data = "-"
+	} else {
+		resp.Data = "+"
+	}
+	return
+}
+
+type BadCommentRequest struct {
+	CommentId int64 `json:"id"`
+}
+
+func BadComment(c *gin.Context) {
+	resp := new(Resp)
+	req := new(BadCommentRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if req.CommentId == 0 {
+		flog.Log.Errorf("BadComment err: %s", "comment_id empty")
+		resp.Error = Error(ParasError, "comment_id empty")
+		return
+	}
+
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("BadComment err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	comment := new(model.Comment)
+	comment.Id = req.CommentId
+	ok, err := comment.Get()
+	if err != nil {
+		flog.Log.Errorf("BadComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok || comment.IsDelete==1{
+		flog.Log.Errorf("BadComment err: %s", "comment not found")
+		resp.Error = Error(CommentNotFound, "")
+		return
+	}
+
+	if comment.Status == 1 {
+		flog.Log.Errorf("BadComment err: %s", "comment ban")
+		resp.Error = Error(CommentBanPermit, "")
+		return
+	}
+
+	bad := new(model.CommentBad)
+	bad.CommentId = req.CommentId
+	bad.UserId = uu.Id
+	ok, err = bad.Exist()
+	if err != nil {
+		flog.Log.Errorf("BadComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	bad.ContentId = comment.ContentId
+	if ok {
+		err = bad.Delete()
+	} else {
+		err = bad.Create()
+	}
+
+	if err != nil {
+		flog.Log.Errorf("BadComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+	}
+
+	cc := new(model.Comment)
+	cc.Id = req.CommentId
+
+	resp.Flag = true
+	if ok {
+		resp.Data = "-"
+	} else {
+
+		if AutoBan {
+			err = cc.Ban(BadTime)
+			if err != nil {
+				flog.Log.Errorf("BadComment ban err: %s", err.Error())
+			}
+		}
+		resp.Data = "+"
+	}
+	return
+}

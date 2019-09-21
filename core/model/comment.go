@@ -20,6 +20,7 @@ type ContentHelper struct {
 	IsHide      bool   `json:"is_hide"`
 	IsInRubbish bool   `json:"is_in_rubbish"`
 	IsBan       bool   `json:"is_ban"`
+	BanTime     int64  `json:"ban_time"`
 	UserId      int64  `json:"user_id"`
 	UserName    string `json:"user_name"`
 	Seo         string `json:"seo"`
@@ -30,7 +31,7 @@ type ContentHelper struct {
 func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]ContentHelper, err error) {
 	back = make(map[int64]ContentHelper)
 	cs := make([]Content, 0)
-	err = FaFaRdb.Client.Cols("id", "title", "status", "seo", "user_name", "user_id").In("id", ids).Find(&cs)
+	err = FaFaRdb.Client.Cols("id", "ban_time", "title", "status", "seo", "user_name", "user_id").In("id", ids).Find(&cs)
 	if err != nil {
 		return
 	}
@@ -43,6 +44,7 @@ func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]C
 			UserName: v.UserName,
 			UserId:   v.UserId,
 			Status:   v.Status,
+			BanTime:  v.BanTime,
 		}
 
 		if v.Status == 1 {
@@ -81,6 +83,7 @@ type CommentHelper struct {
 	CreateTime    int64  `json:"create_time"`
 	CommentDelete bool   `json:"is_delete"`
 	IsBan         bool   `json:"is_ban"`
+	BanTime       int64  `json:"ban_time"`
 	IsAnonymous   bool   `json:"is_anonymous"`
 	UserId        int64  `json:"user_id"`
 	Cool          int64  `json:"cool"`
@@ -93,7 +96,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 	users = make(map[int64]UserHelper)
 
 	cms := make([]Comment, 0)
-	err = FaFaRdb.Client.Cols("id", "user_id", "create_time", "describe", "is_delete", "bad", "cool", "status", "comment_anonymous").In("id", ids).Find(&cms)
+	err = FaFaRdb.Client.Cols("id", "user_id", "create_time", "describe", "is_delete", "bad", "cool", "status", "comment_anonymous", "ban_time").In("id", ids).Find(&cms)
 	if err != nil {
 		return
 	}
@@ -109,6 +112,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 			UserId:        v.UserId,
 			Cool:          v.Cool,
 			Bad:           v.Bad,
+			BanTime:       v.BanTime,
 		}
 		if !all {
 			// delete will not show others
@@ -185,6 +189,7 @@ type Comment struct {
 	Describe            string `json:"-" xorm:"TEXT"`
 	CreateTime          int64  `json:"-"`
 	Status              int    `json:"-" xorm:"not null comment('0 normal, 1 ban') TINYINT(1) index"`
+	BanTime             int64  `json:"-"`
 	Cool                int64  `json:"-"`
 	Bad                 int64  `json:"-"`
 	CommentType         int    `json:"comment_type"` // 0 comment to content, 1 comment to comment, 2 comment to comment more
@@ -301,5 +306,211 @@ func (c *Comment) Delete() (err error) {
 		return err
 	}
 
+	return
+}
+
+func (c *CommentCool) Exist() (ok bool, err error) {
+	if c.UserId == 0 || c.CommentId == 0 {
+		return false, errors.New("where is empty")
+	}
+	num, err := FaFaRdb.Client.Where("user_id=?", c.UserId).And("comment_id=?", c.CommentId).Count(new(CommentCool))
+	if err != nil {
+		return false, err
+	}
+	if num >= 1 {
+		return true, nil
+	}
+
+	return
+}
+
+func (c *CommentCool) Create() (err error) {
+	if c.UserId == 0 || c.CommentId == 0 || c.ContentId == 0 {
+		return errors.New("where is empty")
+	}
+
+	c.CreateTime = time.Now().Unix()
+
+	se := FaFaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	num, err := se.InsertOne(c)
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.CommentId).Incr("cool").Update(new(Comment))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *CommentCool) Delete() (err error) {
+	if c.UserId == 0 || c.CommentId == 0 {
+		return errors.New("where is empty")
+	}
+	se := FaFaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	num, err := se.Where("user_id=?", c.UserId).And("comment_id=?", c.CommentId).Delete(new(CommentCool))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.CommentId).And("cool>=?", 1).Decr("cool").Update(new(Comment))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *CommentBad) Exist() (ok bool, err error) {
+	if c.UserId == 0 || c.CommentId == 0 {
+		return false, errors.New("where is empty")
+	}
+	num, err := FaFaRdb.Client.Where("user_id=?", c.UserId).And("comment_id=?", c.CommentId).Count(new(CommentBad))
+	if err != nil {
+		return false, err
+	}
+	if num >= 1 {
+		return true, nil
+	}
+
+	return
+}
+
+func (c *CommentBad) Create() (err error) {
+	if c.UserId == 0 || c.CommentId == 0 || c.ContentId == 0 {
+		return errors.New("where is empty")
+	}
+
+	c.CreateTime = time.Now().Unix()
+	se := FaFaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	num, err := se.InsertOne(c)
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.CommentId).Incr("bad").Update(new(Comment))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *CommentBad) Delete() (err error) {
+	if c.UserId == 0 || c.CommentId == 0 {
+		return errors.New("where is empty")
+	}
+	se := FaFaRdb.Client.NewSession()
+	err = se.Begin()
+	if err != nil {
+		return err
+	}
+
+	num, err := se.Where("user_id=?", c.UserId).And("comment_id=?", c.CommentId).Delete(new(CommentBad))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	num, err = se.Where("id=?", c.CommentId).And("bad>=?", 1).Decr("bad").Update(new(Comment))
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
+	if num == 0 {
+		se.Rollback()
+		return errors.New("some err")
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+	return
+}
+
+func (c *Comment) Ban(num int64) (err error) {
+	if c.Id == 0 {
+		return errors.New("where is empty")
+	}
+
+	c.BanTime = time.Now().Unix()
+	c.Status = 1
+	_, err = FaFaRdb.Client.Where("id=?", c.Id).And("status!=?", 1).And("bad>?", num).Cols("ban_time", "status").Update(c)
 	return
 }

@@ -135,17 +135,15 @@ var (
 		"/content/cool": {"Cool the Content Self", controllers.CoolContent, GP, false}, // 点赞内容
 		"/content/bad":  {"Bad the Content Self", controllers.BadContent, GP, false},   // 举报内容
 
-		"/comment/create":              {"Create the Comment Self", controllers.CreateComment, POST, false},    // 创建评论
-		"/comment/delete":              {"Delete the Comment Self", controllers.DeleteComment, POST, false},    // 删除评论，逻辑删除
-		"/comment/take":                {"Take the Comment Self", controllers.TakeComment, GP, false},          // 获取评论
+		"/comment/create": {"Create the Comment Self", controllers.CreateComment, POST, false}, // 创建评论
+		"/comment/delete": {"Delete the Comment Self", controllers.DeleteComment, POST, false}, // 删除评论，逻辑删除
+		"/comment/take":   {"Take the Comment Self", controllers.TakeComment, GP, false},       // 获取评论
+		"/comment/cool":   {"Cool the Comment Self", controllers.CoolComment, GP, false},       // 点赞评论
+		"/comment/bad":    {"Bad the Comment Self", controllers.BadComment, GP, false},         // 举报评论
 
 		// admin url
 		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},          // 管理员列出评论
 		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.ListComment, GP, true}, // 管理员评论违禁处理
-
-		//
-		"/comment/cool":                {"Cool the Comment Self", controllers.CreateComment, GP, false},        // 点赞评论
-		"/comment/bad":                 {"Bad the Comment Self", controllers.CreateComment, GP, false},         // 举报评论
 	}
 )
 

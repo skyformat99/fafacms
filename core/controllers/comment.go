@@ -402,7 +402,7 @@ func CoolComment(c *gin.Context) {
 
 	if !ok || comment.IsDelete == 1 {
 		flog.Log.Errorf("CoolComment err: %s", "comment not found")
-		resp.Error = Error(ContentNotFound, "")
+		resp.Error = Error(CommentNotFound, "")
 		return
 	}
 

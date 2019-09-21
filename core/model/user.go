@@ -32,6 +32,7 @@ type User struct {
 	ResetCodeExpired    int64  `json:"reset_code_expired,omitempty"`      // forget password code expired
 	LoginTime           int64  `json:"login_time,omitempty"`              // login time last time
 	LoginIp             string `json:"login_ip,omitempty"`                // login ip last time
+	Vip                 int    `json:"vip"`                               // only vip can op node and content
 }
 
 var UserSortName = []string{"=id", "=name", "-activate_time", "-create_time", "-update_time", "-gender"}
@@ -191,6 +192,16 @@ func (u *User) UpdateInfo() error {
 
 	u.UpdateTime = time.Now().Unix()
 	_, err := FaFaRdb.Client.Where("id=?", u.Id).Omit("id").Update(u)
+	return err
+}
+
+func (u *User) UpdateInfoMustVip() error {
+	if u.Id == 0 {
+		return errors.New("where is empty")
+	}
+
+	u.UpdateTime = time.Now().Unix()
+	_, err := FaFaRdb.Client.Where("id=?", u.Id).Omit("id").MustCols("vip").Update(u)
 	return err
 }
 

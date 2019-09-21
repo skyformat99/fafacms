@@ -53,6 +53,12 @@ func CreateContent(c *gin.Context) {
 		return
 	}
 
+	if uu.Vip == 0 {
+		flog.Log.Errorf("CreateContent err: %s", "not vip")
+		resp.Error = Error(VipError, "")
+		return
+	}
+
 	content := new(model.Content)
 	content.UserId = uu.Id
 	if req.Seo != "" {
@@ -733,6 +739,12 @@ func UpdateInfoOfContent(c *gin.Context) {
 	if err != nil {
 		flog.Log.Errorf("UpdateInfoOfContent err: %s", err.Error())
 		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	if uu.Vip == 0 {
+		flog.Log.Errorf("UpdateInfoOfContent err: %s", "not vip")
+		resp.Error = Error(VipError, "")
 		return
 	}
 
@@ -1548,6 +1560,12 @@ func SentContentToRubbish(c *gin.Context) {
 	if err != nil {
 		flog.Log.Errorf("SentContentToRubbish err: %s", err.Error())
 		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	if uu.Vip == 0 {
+		flog.Log.Errorf("SentContentToRubbish err: %s", "not vip")
+		resp.Error = Error(VipError, "")
 		return
 	}
 

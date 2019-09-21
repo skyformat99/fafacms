@@ -61,15 +61,15 @@ const (
 	DeleteUserAllSessionError           = 120003
 	DeleteUserSessionError              = 120004
 	RefreshUserSessionError             = 120005
-
-	DBError    = 200000
-	DbNotFound = 200001
-	DbRepeat   = 200002
-	DbHookIn   = 200003
+	DBError                             = 200000
+	DbNotFound                          = 200001
+	DbRepeat                            = 200002
+	DbHookIn                            = 200003
 
 	EmailSendError = 300000
 	SystemProblem  = 300001
 
+	VipError  = 99996
 	LazyError = 99997
 	I500      = 99998
 	Unknown   = 99999
@@ -138,6 +138,7 @@ var ErrorMap = map[int]string{
 	DbHookIn:                            "db hook in",
 	I500:                                "500 error",
 	LazyError:                           "db not found or err",
+	VipError:                            "you are not vip",
 }
 
 // common response

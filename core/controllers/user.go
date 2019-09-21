@@ -714,6 +714,7 @@ type ListUserRequest struct {
 	QQ              string   `json:"qq" validate:"omitempty,numeric"`
 	Gender          int      `json:"gender" validate:"oneof=-1 0 1 2"`
 	Status          int      `json:"status" validate:"oneof=-1 0 1 2"`
+	Vip             int      `json:"vip" validate:"oneof=-1 0 1"`
 	PageHelp
 }
 
@@ -766,6 +767,10 @@ func ListUser(c *gin.Context) {
 
 	if req.Gender != -1 {
 		session.And("gender=?", req.Gender)
+	}
+
+	if req.Vip != -1 {
+		session.And("vip=?", req.Vip)
 	}
 
 	if req.QQ != "" {
@@ -979,7 +984,8 @@ type UpdateUserAdminRequest struct {
 	Id       int64  `json:"id" validate:"required"`
 	NickName string `json:"nick_name" validate:"omitempty"`
 	Password string `json:"password,omitempty"`
-	Status   int    `json:"status" validate:"oneof=0 1 2"`
+	Status   int    `json:"status" validate:"oneof=0 1 2"` // o nothing 1 activate 2 ban
+	Vip      int    `json:"vip" validate:"oneof=0 1 2"`    // 1 become vip, 2 no vip
 }
 
 // Update user info, admin url. Can change user password, black one user, change nickname etc.
@@ -1045,7 +1051,15 @@ func UpdateUserAdmin(c *gin.Context) {
 
 	// change user status, 1->2, 2->1
 	u.Status = req.Status
-	err = u.UpdateInfo()
+
+	// vip change
+	u.Vip = uu.Vip
+	if req.Vip == 1 {
+		u.Vip = 1
+	} else if req.Vip == 2 {
+		u.Vip = 0
+	}
+	err = u.UpdateInfoMustVip()
 	if err != nil {
 		flog.Log.Errorf("UpdateUserAdmin err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())

@@ -42,6 +42,12 @@ func CreateNode(c *gin.Context) {
 		return
 	}
 
+	if uu.Vip == 0 {
+		flog.Log.Errorf("CreateNode err: %s", "not vip")
+		resp.Error = Error(VipError, "")
+		return
+	}
+
 	n := new(model.ContentNode)
 	n.UserId = uu.Id
 

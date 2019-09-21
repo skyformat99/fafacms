@@ -72,6 +72,7 @@ type UserHelper struct {
 	Name      string `json:"name"`
 	NickName  string `json:"nick_name"`
 	HeadPhoto string `json:"head_photo"`
+	IsVip     bool   `json:"is_vip"`
 }
 
 type CommentHelper struct {
@@ -147,7 +148,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 	}
 
 	uu := make([]User, 0)
-	err = FaFaRdb.Client.Cols("id", "name", "nick_name", "head_photo").In("id", userIds).Find(&uu)
+	err = FaFaRdb.Client.Cols("id", "vip", "name", "nick_name", "head_photo").In("id", userIds).Find(&uu)
 	if err != nil {
 		return
 	}
@@ -160,6 +161,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 			HeadPhoto: v.HeadPhoto,
 		}
 
+		temp.IsVip = v.Vip == 1
 		users[v.Id] = temp
 	}
 

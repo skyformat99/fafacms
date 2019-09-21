@@ -51,9 +51,11 @@ type People struct {
 	LoginTime       string `json:"login_time,omitempty"`
 	LoginTimeInt    int64  `json:"login_time_int,omitempty"`
 	IsInBlack       bool   `json:"is_in_black"`
+	IsVip           bool   `json:"is_vip"`
 }
 
 type PeoplesRequest struct {
+	Vip  int      `json:"vip" validate:"oneof=-1 0 1"`
 	Sort []string `json:"sort"`
 	PageHelp
 }
@@ -77,16 +79,33 @@ func Peoples(c *gin.Context) {
 		return
 	}
 
+
+	var validate = validator.New()
+	err := validate.Struct(req)
+	if err != nil {
+		flog.Log.Errorf("Peoples err: %s", err.Error())
+		resp.Error = Error(ParasError, err.Error())
+		return
+	}
+
 	session := model.FaFaRdb.Client.NewSession()
 	defer session.Close()
 
 	session.Table(new(model.User)).Where("1=1").And("status!=?", 0).And("name!=?", "admin")
 
+	if req.Vip != -1 {
+		if req.Vip == 0 {
+			session.And("vip=?", 0)
+		} else {
+			session.And("vip=?", 1)
+		}
+	}
+
 	countSession := session.Clone()
 	defer countSession.Close()
 	total, err := countSession.Count()
 	if err != nil {
-		flog.Log.Errorf("ListUser err:%s", err.Error())
+		flog.Log.Errorf("Peoples err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
@@ -101,7 +120,7 @@ func Peoples(c *gin.Context) {
 		p.build(session, req.Sort, model.UserSortName)
 		err = session.Find(&users)
 		if err != nil {
-			flog.Log.Errorf("ListUser err:%s", err.Error())
+			flog.Log.Errorf("Peoples err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
@@ -142,6 +161,7 @@ func Peoples(c *gin.Context) {
 		p.WeChat = v.WeChat
 		p.WeiBo = v.WeiBo
 		p.Gender = v.Gender
+		p.IsVip = v.Vip == 1
 		peoples = append(peoples, p)
 	}
 	respResult.Users = peoples
@@ -195,7 +215,7 @@ func NodesInfo(c *gin.Context) {
 	}
 
 	if req.UserId == 0 && req.UserName == "" {
-		flog.Log.Errorf("ListNode err:%s", "")
+		flog.Log.Errorf("NodesInfo err:%s", "")
 		resp.Error = Error(ParasError, "user info empty")
 		return
 	}
@@ -217,7 +237,7 @@ func NodesInfo(c *gin.Context) {
 	Build(session, req.Sort, model.ContentNodeSortName)
 	err := session.Find(&nodes)
 	if err != nil {
-		flog.Log.Errorf("ListNode err:%s", err.Error())
+		flog.Log.Errorf("NodesInfo err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
@@ -304,14 +324,14 @@ func NodeInfo(c *gin.Context) {
 	}
 
 	if req.Id == 0 && req.Seo == "" {
-		flog.Log.Errorf("Node err: %s", "content node id or seo empty")
+		flog.Log.Errorf("NodeInfo err: %s", "content node id or seo empty")
 		resp.Error = Error(ParasError, "content node id or seo empty")
 		return
 	}
 
 	if req.Id == 0 && req.Seo != "" {
 		if req.UserId == 0 && req.UserName == "" {
-			flog.Log.Errorf("Node err: %s", "content node seo exist but user info empty")
+			flog.Log.Errorf("NodeInfo err: %s", "content node seo exist but user info empty")
 			resp.Error = Error(ParasError, "content node seo exist but user info empty")
 			return
 		}
@@ -341,13 +361,13 @@ func NodeInfo(c *gin.Context) {
 	v := new(model.ContentNode)
 	exist, err := session.Get(v)
 	if err != nil {
-		flog.Log.Errorf("Node err:%s", err.Error())
+		flog.Log.Errorf("NodeInfo err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
 
 	if !exist {
-		flog.Log.Errorf("Node err:%s", "content node not found")
+		flog.Log.Errorf("NodeInfo err:%s", "content node not found")
 		resp.Error = Error(ContentNodeNotFound, "")
 		return
 	}
@@ -375,7 +395,7 @@ func NodeInfo(c *gin.Context) {
 		ns := make([]model.ContentNode, 0)
 		err = model.FaFaRdb.Client.Where("parent_node_id=?", f.Id).And("status=?", 0).Find(&ns)
 		if err != nil {
-			flog.Log.Errorf("Node err:%s", err.Error())
+			flog.Log.Errorf("NodeInfo err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
@@ -478,6 +498,8 @@ func UserInfo(c *gin.Context) {
 	p.WeChat = v.WeChat
 	p.WeiBo = v.WeiBo
 	p.Gender = v.Gender
+
+	p.IsVip = v.Vip == 1
 	resp.Flag = true
 	resp.Data = p
 }

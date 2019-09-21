@@ -35,7 +35,7 @@ type User struct {
 	Vip                 int    `json:"vip"`                               // only vip can op node and content
 }
 
-var UserSortName = []string{"=id", "=name", "-activate_time", "-create_time", "-update_time", "-gender"}
+var UserSortName = []string{"=id", "=name", "-vip", "-activate_time", "-create_time", "-update_time", "-gender"}
 
 func (u *User) Get() (err error) {
 	var exist bool

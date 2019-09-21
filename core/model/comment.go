@@ -171,7 +171,7 @@ type Comment struct {
 	UserId              int64  `json:"-" xorm:"bigint index"`
 	UserName            string `json:"-" xorm:"index"`
 	ContentId           int64  `json:"content_id" xorm:"bigint index"`
-	ContentTitle        string `json:"-"`
+	ContentTitle        string `json:"content_title"` // may be content delete so this field keep
 	ContentUserId       int64  `json:"-" xorm:"bigint index"`
 	ContentUserName     string `json:"-" xorm:"index"`
 	CommentId           int64  `json:"comment_id" xorm:"bigint index"`

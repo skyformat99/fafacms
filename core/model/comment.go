@@ -92,7 +92,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 	users = make(map[int64]UserHelper)
 
 	cms := make([]Comment, 0)
-	err = FaFaRdb.Client.Cols("id", "describe", "is_delete", "bad", "cool", "status", "comment_anonymous").In("id", ids).Find(&cms)
+	err = FaFaRdb.Client.Cols("id", "user_id", "create_time", "describe", "is_delete", "bad", "cool", "status", "comment_anonymous").In("id", ids).Find(&cms)
 	if err != nil {
 		return
 	}

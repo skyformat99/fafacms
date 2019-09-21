@@ -60,8 +60,8 @@ func init() {
 	// Default read ./config.json
 	flag.StringVar(&configFile, "config", "./config.json", "config file")
 
-	// Auto init db
-	flag.BoolVar(&createTable, "init_db", false, "create db table")
+	// Auto init db, the second time can set false
+	flag.BoolVar(&createTable, "init_db", true, "create db table")
 
 	flag.Int64Var(&timeZone, "time_zone", 8, "time zone offset the utc")
 	flag.BoolVar(&autoBan, "auto_ban", false, "auto ban the content or comment")

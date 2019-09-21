@@ -174,6 +174,7 @@ func CreateComment(c *gin.Context) {
 	newComment.ContentUserName = content.UserName
 	newComment.ContentTitle = content.Title
 	newComment.UserId = uu.Id
+	newComment.UserName = uu.Name
 	newComment.Describe = req.Body
 	if targetComment.CommentType == model.CommentTypeOfContent {
 		newComment.RootCommentId = targetComment.Id
@@ -289,6 +290,13 @@ func TakeComment(c *gin.Context) {
 		return
 	}
 
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
 	comment := new(model.Comment)
 	comment.Id = req.CommentId
 	ok, err := comment.Get()
@@ -298,14 +306,45 @@ func TakeComment(c *gin.Context) {
 		return
 	}
 
+	// if not found
 	if !ok || comment.IsDelete == 1 {
 		flog.Log.Errorf("TakeComment err: %s", "comment not found")
 		resp.Error = Error(CommentNotFound, "")
 		return
 	}
 
+	commentIds := make([]int64, 0)
+	commentIds = append(commentIds, comment.Id)
+	if comment.CommentType >= model.CommentTypeOfRootComment {
+		commentIds = append(commentIds, comment.RootCommentId)
+	}
+	if comment.CommentType >= model.CommentTypeOfComment {
+		commentIds = append(commentIds, comment.CommentId)
+	}
+
+	backContents, err := model.GetContentHelper([]int64{comment.ContentId}, false, uu.Id)
+	if err != nil {
+		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	backComments, backUsers, err := model.GetCommentAndCommentUser(commentIds, false, uu.Id)
+	if err != nil {
+		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	resp.Data = map[string]interface{}{
+		"comment": comment,
+		"extra": model.CommentExtra{
+			Users:    backUsers,
+			Comments: backComments,
+			Contents: backContents,
+		},
+	}
 	resp.Flag = true
-	resp.Data = comment
 
 }
 

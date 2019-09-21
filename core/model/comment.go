@@ -293,5 +293,11 @@ func (c *Comment) Delete() (err error) {
 		return errors.New("some err")
 	}
 
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return err
+	}
+
 	return
 }

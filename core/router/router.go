@@ -34,6 +34,7 @@ var (
 		"/content":   {"Get Content", controllers.Content, GP, false},          // 获取文章
 
 		// start at 2019/9
+		// todo
 		"/content/comment": {"List Comment of Content", controllers.ListHomeComment, GP, false}, // 列出文章下的评论
 
 		// 前端的用户授权路由，不需要登录即可操作
@@ -141,7 +142,7 @@ var (
 		"/comment/cool":   {"Cool the Comment Self", controllers.CoolComment, GP, false},       // 点赞评论
 		"/comment/bad":    {"Bad the Comment Self", controllers.BadComment, GP, false},         // 举报评论
 
-		// admin url
+		// admin url todo
 		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},          // 管理员列出评论
 		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.ListComment, GP, true}, // 管理员评论违禁处理
 	}

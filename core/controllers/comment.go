@@ -4,7 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hunterhug/fafacms/core/flog"
 	"github.com/hunterhug/fafacms/core/model"
+	"math"
 	"strings"
+	"github.com/go-playground/validator"
 )
 
 // comment escape
@@ -348,11 +350,87 @@ func TakeComment(c *gin.Context) {
 
 }
 
+type ListCommentRequest struct {
+	Id     int64    `json:"content_id"`
+	UserId int64    `json:"user_id"`
+	Types  int      `json:"types" validate:"oneof=-1 0 1 2"`
+	Sort   []string `json:"sort"`
+	PageHelp
+}
+
+// todo
 func ListComment(c *gin.Context) {
 	resp := new(Resp)
+
+	respResult := new(ListContentHistoryResponse)
+	req := new(ListContentHistoryRequest)
 	defer func() {
-		JSONL(c, 200, nil, resp)
+		JSONL(c, 200, req, resp)
 	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	var validate = validator.New()
+	err := validate.Struct(req)
+	if err != nil {
+		flog.Log.Errorf("ListContentHistory err: %s", err.Error())
+		resp.Error = Error(ParasError, err.Error())
+		return
+	}
+
+	// new query list session
+	session := model.FaFaRdb.Client.NewSession()
+	defer session.Close()
+
+	// group list where prepare
+	session.Table(new(model.ContentHistory)).Where("1=1")
+
+	if req.Id != 0 {
+		session.And("content_id=?", req.Id)
+	}
+
+	if req.Types != -1 {
+		session.And("types=?", req.Types)
+	}
+
+	// count num
+	countSession := session.Clone()
+	defer countSession.Close()
+	total, err := countSession.Count()
+	if err != nil {
+		flog.Log.Errorf("ListContentHistory err:%s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	// if count>0 start list
+	cs := make([]model.ContentHistory, 0)
+	p := &req.PageHelp
+	if total == 0 {
+		if p.Limit == 0 {
+			p.Limit = 20
+		}
+	} else {
+		// sql build
+		p.build(session, req.Sort, model.ContentHistorySortName)
+		// do query
+		err = session.Omit("describe").Find(&cs)
+		if err != nil {
+			flog.Log.Errorf("ListContentHistory err:%s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+	}
+
+	// result
+	respResult.Contents = cs
+	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	respResult.PageHelp = *p
+	resp.Data = respResult
+	resp.Flag = true
 }
 
 func ListHomeComment(c *gin.Context) {
@@ -482,7 +560,7 @@ func BadComment(c *gin.Context) {
 		return
 	}
 
-	if !ok || comment.IsDelete==1{
+	if !ok || comment.IsDelete == 1 {
 		flog.Log.Errorf("BadComment err: %s", "comment not found")
 		resp.Error = Error(CommentNotFound, "")
 		return

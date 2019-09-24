@@ -82,3 +82,12 @@ func Substr(str string, start, length int) string {
 	}
 	return string(rs[start:end])
 }
+
+func MapToArray(m map[int64]struct{}) []int64 {
+	b := make([]int64, 0, len(m))
+	for k := range m {
+		b = append(b, k)
+	}
+
+	return b
+}

@@ -30,6 +30,9 @@ type ContentHelper struct {
 // get contents from id, if all false, which is deleted or hide will not include in map
 func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]ContentHelper, err error) {
 	back = make(map[int64]ContentHelper)
+	if len(ids) == 0 {
+		return
+	}
 	cs := make([]Content, 0)
 	err = FaFaRdb.Client.Cols("id", "ban_time", "title", "status", "seo", "user_name", "user_id").In("id", ids).Find(&cs)
 	if err != nil {
@@ -84,6 +87,7 @@ type CommentHelper struct {
 	CommentDelete bool   `json:"is_delete"`
 	IsBan         bool   `json:"is_ban"`
 	BanTime       int64  `json:"ban_time"`
+	DeleteTime    int64  `json:"delete_time"`
 	IsAnonymous   bool   `json:"is_anonymous"`
 	UserId        int64  `json:"user_id"`
 	Cool          int64  `json:"cool"`
@@ -94,9 +98,11 @@ type CommentHelper struct {
 func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments map[int64]CommentHelper, users map[int64]UserHelper, err error) {
 	comments = make(map[int64]CommentHelper)
 	users = make(map[int64]UserHelper)
-
+	if len(ids) == 0 {
+		return
+	}
 	cms := make([]Comment, 0)
-	err = FaFaRdb.Client.Cols("id", "user_id", "create_time", "describe", "is_delete", "bad", "cool", "status", "comment_anonymous", "ban_time").In("id", ids).Find(&cms)
+	err = FaFaRdb.Client.Cols("id", "user_id", "create_time", "describe", "is_delete", "delete_time", "bad", "cool", "status", "comment_anonymous", "ban_time").In("id", ids).Find(&cms)
 	if err != nil {
 		return
 	}
@@ -113,6 +119,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 			Cool:          v.Cool,
 			Bad:           v.Bad,
 			BanTime:       v.BanTime,
+			DeleteTime:    v.DeleteTime,
 		}
 		if !all {
 			// delete will not show others
@@ -197,6 +204,8 @@ type Comment struct {
 	IsDelete            int    `json:"-"`
 	DeleteTime          int64  `json:"-"`
 }
+
+var CommentSortName = []string{"=id", "-create_time", "=content_id", "=user_id", "=cool", "=bad"}
 
 type CommentExtra struct {
 	Users    map[int64]UserHelper    `json:"users"`

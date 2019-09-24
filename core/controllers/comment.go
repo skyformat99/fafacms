@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hunterhug/fafacms/core/flog"
 	"github.com/hunterhug/fafacms/core/model"
+	"github.com/hunterhug/fafacms/core/util"
 	"math"
 	"strings"
 	"github.com/go-playground/validator"
@@ -351,19 +352,39 @@ func TakeComment(c *gin.Context) {
 }
 
 type ListCommentRequest struct {
-	Id     int64    `json:"content_id"`
-	UserId int64    `json:"user_id"`
-	Types  int      `json:"types" validate:"oneof=-1 0 1 2"`
-	Sort   []string `json:"sort"`
+	Id                  int64    `json:"id"`
+	UserId              int64    `json:"user_id"`
+	UserName            string   `json:"user_name"`
+	ContentId           int64    `json:"content_id"`
+	ContentUserId       int64    `json:"content_user_id"`
+	ContentUserName     string   `json:"content_user_name"`
+	CommentId           int64    `json:"comment_id"`
+	CommentUserId       int64    `json:"comment_user_id"`
+	CommentUserName     string   `json:"comment_user_name"`
+	RootCommentId       int64    `json:"root_comment_id"`
+	RootCommentUserId   int64    `json:"root_comment_user_id"`
+	RootCommentUserName string   `json:"root_comment_user_name"`
+	CommentType         int      `json:"comment_type" validate:"oneof=-1 0 1 2"`
+	Status              int      `json:"status" validate:"oneof=-1 0 1"`
+	IsDelete            int      `json:"is_delete" validate:"oneof=-1 0 1"`
+	IsAnonymous         int      `json:"is_anonymous" validate:"oneof=-1 0 1"`
+	CreateTimeBegin     int64    `json:"create_time_begin"`
+	CreateTimeEnd       int64    `json:"create_time_end"`
+	Sort                []string `json:"sort"`
 	PageHelp
 }
 
-// todo
+type ListCommentResponse struct {
+	Comments     []model.Comment    `json:"comments"`
+	CommentExtra model.CommentExtra `json:"extra"`
+	PageHelp
+}
+
 func ListComment(c *gin.Context) {
 	resp := new(Resp)
 
-	respResult := new(ListContentHistoryResponse)
-	req := new(ListContentHistoryRequest)
+	respResult := new(ListCommentResponse)
+	req := new(ListCommentRequest)
 	defer func() {
 		JSONL(c, 200, req, resp)
 	}()
@@ -376,7 +397,7 @@ func ListComment(c *gin.Context) {
 	var validate = validator.New()
 	err := validate.Struct(req)
 	if err != nil {
-		flog.Log.Errorf("ListContentHistory err: %s", err.Error())
+		flog.Log.Errorf("ListComment err: %s", err.Error())
 		resp.Error = Error(ParasError, err.Error())
 		return
 	}
@@ -386,14 +407,78 @@ func ListComment(c *gin.Context) {
 	defer session.Close()
 
 	// group list where prepare
-	session.Table(new(model.ContentHistory)).Where("1=1")
+	session.Table(new(model.Comment)).Where("1=1")
 
 	if req.Id != 0 {
-		session.And("content_id=?", req.Id)
+		session.And("id=?", req.Id)
 	}
 
-	if req.Types != -1 {
-		session.And("types=?", req.Types)
+	if req.UserId != 0 {
+		session.And("user_id=?", req.UserId)
+	}
+
+	if req.UserName != "" {
+		session.And("user_name=?", req.UserName)
+	}
+
+	if req.ContentId != 0 {
+		session.And("content_id=?", req.ContentId)
+	}
+
+	if req.ContentUserId != 0 {
+		session.And("content_user_id=?", req.ContentUserId)
+	}
+
+	if req.ContentUserName != "" {
+		session.And("content_user_name=?", req.ContentUserName)
+	}
+
+	if req.CommentId != 0 {
+		session.And("comment_id=?", req.CommentId)
+	}
+
+	if req.CommentUserId != 0 {
+		session.And("comment_user_id=?", req.CommentUserId)
+	}
+
+	if req.CommentUserName != "" {
+		session.And("comment_user_name=?", req.CommentUserName)
+	}
+
+	if req.RootCommentId != 0 {
+		session.And("root_comment_id=?", req.RootCommentId)
+	}
+
+	if req.RootCommentUserId != 0 {
+		session.And("root_comment_user_id=?", req.RootCommentUserId)
+	}
+
+	if req.RootCommentUserName != "" {
+		session.And("root_comment_user_name=?", req.RootCommentUserName)
+	}
+
+	if req.CommentType != -1 {
+		session.And("comment_type=?", req.CommentType)
+	}
+
+	if req.Status != -1 {
+		session.And("status=?", req.Status)
+	}
+
+	if req.IsDelete != -1 {
+		session.And("is_delete=?", req.IsDelete)
+	}
+
+	if req.IsAnonymous != -1 {
+		session.And("comment_anonymous=?", req.IsAnonymous)
+	}
+
+	if req.CreateTimeBegin > 0 {
+		session.And("create_time>=?", req.CreateTimeBegin)
+	}
+
+	if req.CreateTimeEnd > 0 {
+		session.And("create_time<?", req.CreateTimeEnd)
 	}
 
 	// count num
@@ -401,13 +486,13 @@ func ListComment(c *gin.Context) {
 	defer countSession.Close()
 	total, err := countSession.Count()
 	if err != nil {
-		flog.Log.Errorf("ListContentHistory err:%s", err.Error())
+		flog.Log.Errorf("ListComment err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
 
 	// if count>0 start list
-	cs := make([]model.ContentHistory, 0)
+	cs := make([]model.Comment, 0)
 	p := &req.PageHelp
 	if total == 0 {
 		if p.Limit == 0 {
@@ -415,18 +500,51 @@ func ListComment(c *gin.Context) {
 		}
 	} else {
 		// sql build
-		p.build(session, req.Sort, model.ContentHistorySortName)
+		p.build(session, req.Sort, model.CommentSortName)
 		// do query
-		err = session.Omit("describe").Find(&cs)
+		err = session.Find(&cs)
 		if err != nil {
-			flog.Log.Errorf("ListContentHistory err:%s", err.Error())
+			flog.Log.Errorf("ListComment err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
 	}
 
+	commentIds := make(map[int64]struct{})
+	contentIds := make(map[int64]struct{})
+	for _, c := range cs {
+		commentIds[c.Id] = struct{}{}
+		if c.CommentType >= model.CommentTypeOfRootComment && c.RootCommentId != 0 {
+			commentIds[c.RootCommentId] = struct{}{}
+		}
+		if c.CommentType >= model.CommentTypeOfComment && c.CommentId != 0 {
+			commentIds[c.CommentId] = struct{}{}
+		}
+
+		contentIds[c.ContentId] = struct{}{}
+	}
+
+	backContents, err := model.GetContentHelper(util.MapToArray(contentIds), true, 0)
+	if err != nil {
+		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), true, 0)
+	if err != nil {
+		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
 	// result
-	respResult.Contents = cs
+	respResult.Comments = cs
+	respResult.CommentExtra = model.CommentExtra{
+		Users:    backUsers,
+		Comments: backComments,
+		Contents: backContents,
+	}
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
 	respResult.PageHelp = *p
 	resp.Data = respResult

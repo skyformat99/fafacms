@@ -25,6 +25,7 @@ type ContentHelper struct {
 	UserName    string `json:"user_name"`
 	Seo         string `json:"seo"`
 	Status      int    `json:"status"`
+	CommentNum  int64  `json:"comment_num"`
 }
 
 // get contents from id, if all false, which is deleted or hide will not include in map
@@ -34,20 +35,21 @@ func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]C
 		return
 	}
 	cs := make([]Content, 0)
-	err = FaFaRdb.Client.Cols("id", "ban_time", "title", "status", "seo", "user_name", "user_id").In("id", ids).Find(&cs)
+	err = FaFaRdb.Client.Cols("id", "ban_time", "title", "status", "seo", "user_name", "user_id", "comment_num").In("id", ids).Find(&cs)
 	if err != nil {
 		return
 	}
 
 	for _, v := range cs {
 		temp := ContentHelper{
-			Id:       v.Id,
-			Title:    v.Title,
-			Seo:      v.Seo,
-			UserName: v.UserName,
-			UserId:   v.UserId,
-			Status:   v.Status,
-			BanTime:  v.BanTime,
+			Id:         v.Id,
+			Title:      v.Title,
+			Seo:        v.Seo,
+			UserName:   v.UserName,
+			UserId:     v.UserId,
+			Status:     v.Status,
+			BanTime:    v.BanTime,
+			CommentNum: v.CommentNum,
 		}
 
 		if v.Status == 1 {
@@ -83,6 +85,7 @@ type UserHelper struct {
 type CommentHelper struct {
 	Id            int64  `json:"id"`
 	Describe      string `json:"describe"`
+	ContentId     int64  `json:"content_id"`
 	CreateTime    int64  `json:"create_time"`
 	CommentDelete bool   `json:"is_delete"`
 	IsBan         bool   `json:"is_ban"`
@@ -102,7 +105,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 		return
 	}
 	cms := make([]Comment, 0)
-	err = FaFaRdb.Client.Cols("id", "user_id", "create_time", "describe", "is_delete", "delete_time", "bad", "cool", "status", "comment_anonymous", "ban_time").In("id", ids).Find(&cms)
+	err = FaFaRdb.Client.Cols("id", "content_id", "user_id", "create_time", "describe", "is_delete", "delete_time", "bad", "cool", "status", "comment_anonymous", "ban_time").In("id", ids).Find(&cms)
 	if err != nil {
 		return
 	}
@@ -120,6 +123,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 			Bad:           v.Bad,
 			BanTime:       v.BanTime,
 			DeleteTime:    v.DeleteTime,
+			ContentId:     v.ContentId,
 		}
 		if !all {
 			// delete will not show others

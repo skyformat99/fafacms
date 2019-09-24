@@ -523,7 +523,6 @@ func ListComment(c *gin.Context) {
 
 		contentIds[c.ContentId] = struct{}{}
 	}
-
 	backContents, err := model.GetContentHelper(util.MapToArray(contentIds), true, 0)
 	if err != nil {
 		flog.Log.Errorf("TakeComment err: %s", err.Error())

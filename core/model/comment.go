@@ -126,9 +126,21 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 			ContentId:     v.ContentId,
 		}
 		if !all {
-			// delete will not show others
+			// delete will not show others, but should keep some important field
 			if temp.CommentDelete {
-				temp = CommentHelper{Id: v.Id, CommentDelete: true}
+				temp = CommentHelper{
+					Id:            v.Id,
+					CreateTime:    v.CreateTime,
+					CommentDelete: v.IsDelete == 1,
+					IsAnonymous:   v.CommentAnonymous == CommentAnonymous,
+					UserId:        v.UserId,
+					DeleteTime:    v.DeleteTime,
+					ContentId:     v.ContentId,
+				}
+				// user info hide
+				if yourUserId != temp.UserId && temp.IsAnonymous {
+					temp.UserId = 0
+				}
 			} else {
 
 				// userId is you, do nothing
@@ -210,6 +222,7 @@ type Comment struct {
 }
 
 var CommentSortName = []string{"=id", "-create_time", "=content_id", "=user_id", "=cool", "=bad"}
+var CommentHomeSortName = []string{"-create_time", "-cool"}
 
 type CommentExtra struct {
 	Users    map[int64]UserHelper    `json:"users"`

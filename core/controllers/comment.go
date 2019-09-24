@@ -518,14 +518,14 @@ func ListComment(c *gin.Context) {
 	}
 	backContents, err := model.GetContentHelper(util.MapToArray(contentIds), true, 0)
 	if err != nil {
-		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		flog.Log.Errorf("ListComment err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
 
 	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), true, 0)
 	if err != nil {
-		flog.Log.Errorf("TakeComment err: %s", err.Error())
+		flog.Log.Errorf("ListComment err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
@@ -543,11 +543,122 @@ func ListComment(c *gin.Context) {
 	resp.Flag = true
 }
 
+type ListHomeCommentRequest struct {
+	ContentId int64    `json:"content_id"`
+	Sort      []string `json:"sort"`
+	PageHelp
+}
+
 func ListHomeComment(c *gin.Context) {
 	resp := new(Resp)
+
+	respResult := new(ListCommentResponse)
+	req := new(ListHomeCommentRequest)
 	defer func() {
-		JSONL(c, 200, nil, resp)
+		JSONL(c, 200, req, resp)
 	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if req.ContentId == 0 {
+		flog.Log.Errorf("ListHomeComment err: %s", "content_id empty")
+		resp.Error = Error(ParasError, "content_id empty")
+		return
+	}
+
+	// new query list session
+	session := model.FaFaRdb.Client.NewSession()
+	defer session.Close()
+
+	// group list where prepare
+	session.Table(new(model.Comment)).Where("1=1")
+
+	uu, err := GetUserSession(c)
+	var yourUserId int64 = 0
+	if err == nil {
+		yourUserId = uu.Id
+	}
+
+	if req.ContentId != 0 {
+		session.And("content_id=?", req.ContentId)
+	}
+
+	backContents, err := model.GetContentHelper([]int64{req.ContentId}, false, yourUserId)
+	if err != nil {
+		flog.Log.Errorf("ListHomeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if len(backContents) == 0 {
+		flog.Log.Errorf("ListHomeComment err: %s", "comment not found")
+		resp.Error = Error(CommentNotFound, "")
+		return
+	}
+
+	session.And("is_delete=?", 0)
+
+	// count num
+	countSession := session.Clone()
+	defer countSession.Close()
+	total, err := countSession.Count()
+	if err != nil {
+		flog.Log.Errorf("ListHomeComment err:%s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	// if count>0 start list
+	cs := make([]model.Comment, 0)
+	p := &req.PageHelp
+	if total == 0 {
+		if p.Limit == 0 {
+			p.Limit = 20
+		}
+	} else {
+		// sql build
+		p.build(session, req.Sort, model.CommentHomeSortName)
+		// do query
+		err = session.Find(&cs)
+		if err != nil {
+			flog.Log.Errorf("ListHomeComment err:%s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+	}
+
+	commentIds := make(map[int64]struct{})
+	for _, c := range cs {
+		commentIds[c.Id] = struct{}{}
+		if c.CommentType >= model.CommentTypeOfRootComment && c.RootCommentId != 0 {
+			commentIds[c.RootCommentId] = struct{}{}
+		}
+		if c.CommentType >= model.CommentTypeOfComment && c.CommentId != 0 {
+			commentIds[c.CommentId] = struct{}{}
+		}
+	}
+
+	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), false, yourUserId)
+	if err != nil {
+		flog.Log.Errorf("ListHomeComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	// result
+	respResult.Comments = cs
+	respResult.CommentExtra = model.CommentExtra{
+		Users:    backUsers,
+		Comments: backComments,
+		Contents: backContents,
+	}
+	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	respResult.PageHelp = *p
+	resp.Data = respResult
+	resp.Flag = true
 }
 
 type CoolCommentRequest struct {

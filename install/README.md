@@ -98,14 +98,20 @@ fafacms -config=./config.json
 ```
   -auth_skip_debug
         Auth skip debug
+  -auto_ban
+        auto ban the content or comment
+  -ban_time int
+        how much time to bad a content or comment will ban it (default 10)
   -config string
         config file (default "./config.json")
   -email_debug
         Email debug
   -history_record
-        Content history record
+        Content history record (default true)
   -init_db
         create db table (default true)
+  -time_zone int
+        time zone offset the utc (default 8)
 ```
 
 正常启动如下：
@@ -114,7 +120,7 @@ fafacms -config=./config.json
 ./fafacms config=/root/fafacms/config.json -history_record=true -init_db=false
 ```
 
-表示文章内容开启历史记录功能，并且关闭数据库数据填充（第二次启动时可设置为false）。
+表示文章内容开启历史记录功能，开启自动违禁评论和内容，并且关闭数据库数据填充（第二次启动时可设置为false）。
 
 ## 后端部署(Docker)
 

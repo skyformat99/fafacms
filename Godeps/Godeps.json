@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/hunterhug/fafacms",
-	"GoVersion": "go1.12",
+	"GoVersion": "go1.13",
 	"GodepVersion": "v80",
 	"Deps": [
 		{

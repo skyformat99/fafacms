@@ -204,7 +204,7 @@ func main() {
 }
 
 func welcome() {
-	flog.Log.Notice("Hi! FaFa CMS!")
+	flog.Log.Notice("Hi! FaFa CMS! A Nice CMS.")
 	s := `
 ███████╗ █████╗ ███████╗ █████╗  ██████╗███╗   ███╗███████╗
 ██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝████╗ ████║██╔════╝

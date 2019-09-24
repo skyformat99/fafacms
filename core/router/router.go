@@ -143,8 +143,8 @@ var (
 		"/comment/bad":    {"Bad the Comment Self", controllers.BadComment, GP, false},         // 举报评论
 
 		// admin url
-		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},          // 管理员列出评论
-		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.ListComment, GP, true}, // 管理员评论违禁处理
+		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},            // 管理员列出评论
+		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 管理员评论违禁处理
 	}
 )
 

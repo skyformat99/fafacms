@@ -279,6 +279,44 @@ func (c *Comment) Get() (bool, error) {
 	return FaFaRdb.Client.Get(c)
 }
 
+func (c *Comment) UpdateStatus() (int64, error) {
+	if c.Id == 0 {
+		return 0, errors.New("where is empty")
+	}
+
+	if c.Status == 1 {
+		c.BanTime = time.Now().Unix()
+		return FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).Update(c)
+	}
+
+	se := FaFaRdb.Client.NewSession()
+	err := se.Begin()
+	if err != nil {
+		return 0, err
+	}
+
+	_, err = se.Where("comment_id=?", c.Id).Delete(new(CommentBad))
+	if err != nil {
+		se.Rollback()
+		return 0, err
+	}
+
+	c.BanTime = 0
+	c.Bad = 0
+	_, err = se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).Update(c)
+	if err != nil {
+		se.Rollback()
+		return 0, err
+	}
+
+	err = se.Commit()
+	if err != nil {
+		se.Rollback()
+		return 0, err
+	}
+	return 0, nil
+}
+
 func (c *Comment) Delete() (err error) {
 	if c.Id == 0 {
 		return errors.New("where is empty")

@@ -209,13 +209,6 @@ func CreateComment(c *gin.Context) {
 	resp.Flag = true
 }
 
-func UpdateComment(c *gin.Context) {
-	resp := new(Resp)
-	defer func() {
-		JSONL(c, 200, nil, resp)
-	}()
-}
-
 type DeleteCommentRequest struct {
 	CommentId int64 `json:"id"`
 }
@@ -728,4 +721,60 @@ func BadComment(c *gin.Context) {
 		resp.Data = "+"
 	}
 	return
+}
+
+type UpdateCommentRequest struct {
+	CommentId int64 `json:"id"`
+	Status    int   `json:"status"`
+}
+
+func UpdateComment(c *gin.Context) {
+	resp := new(Resp)
+	req := new(UpdateCommentRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if req.CommentId == 0 {
+		flog.Log.Errorf("UpdateComment err: %s", "id empty")
+		resp.Error = Error(ParasError, "id empty")
+		return
+	}
+
+	if req.Status != 0 && req.Status != 1 {
+		flog.Log.Errorf("UpdateComment err: %s", "status should be 0 or 1")
+		resp.Error = Error(ParasError, "status should be 0 or 1")
+		return
+	}
+	comment := new(model.Comment)
+	comment.Id = req.CommentId
+	ok, err := comment.Get()
+	if err != nil {
+		flog.Log.Errorf("UpdateComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok || comment.IsDelete == 1 {
+		flog.Log.Errorf("UpdateComment err: %s", "comment not found")
+		resp.Error = Error(CommentNotFound, "")
+		return
+	}
+
+	if comment.Status == req.Status {
+	} else {
+		comment.Status = req.Status
+		_, err := comment.UpdateStatus()
+		if err != nil {
+			flog.Log.Errorf("UpdateComment err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+		}
+
+	}
+	resp.Flag = true
 }

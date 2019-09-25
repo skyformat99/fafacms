@@ -33,9 +33,11 @@ type User struct {
 	LoginTime           int64  `json:"login_time,omitempty"`              // login time last time
 	LoginIp             string `json:"login_ip,omitempty"`                // login ip last time
 	Vip                 int    `json:"vip"`                               // only vip can op node and content
+	FollowedNum         int64  `json:"followed_num"`
+	FollowingNum        int64  `json:"following_num"`
 }
 
-var UserSortName = []string{"=id", "=name", "-vip", "-activate_time", "-create_time", "-update_time", "-gender"}
+var UserSortName = []string{"=id", "=name", "-vip", "-activate_time", "=followed_num", "=following_num", "=create_time", "=update_time", "=gender"}
 
 func (u *User) Get() (err error) {
 	var exist bool

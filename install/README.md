@@ -99,19 +99,23 @@ fafacms -config=./config.json
   -auth_skip_debug
         Auth skip debug
   -auto_ban
-        auto ban the content or comment
+        Auto ban the content or comment
   -ban_time int
-        how much time to bad a content or comment will ban it (default 10)
+        Content or comment will be ban in how much bad's time (default 10)
   -config string
-        config file (default "./config.json")
+        Config file (default "./config.json")
   -email_debug
         Email debug
   -history_record
-        Content history record (default true)
+        Content history can be record (default true)
   -init_db
-        create db table (default true)
+        Init create db table (default true)
+  -session_expire_time int
+        Login session expire second time, token will destroy after this time (default 604800)
+  -single_login
+        User can only single point login
   -time_zone int
-        time zone offset the utc (default 8)
+        Time zone offset the utc (default 8)
 ```
 
 正常启动如下：

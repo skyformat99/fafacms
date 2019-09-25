@@ -52,21 +52,29 @@ var (
 
 	// Beyond and autoBan is true will Ban it!
 	banTime int64
+
+	// Single Login
+	singleLogin bool
+
+	// Login Session expire time
+	sessionExpireTime int64
 )
 
 // Parse flag when init
 // Those variables will not config in file
 func init() {
 	// Default read ./config.json
-	flag.StringVar(&configFile, "config", "./config.json", "config file")
+	flag.StringVar(&configFile, "config", "./config.json", "Config file")
 
 	// Auto init db, the second time can set false
-	flag.BoolVar(&createTable, "init_db", true, "create db table")
+	flag.BoolVar(&createTable, "init_db", true, "Init create db table")
 
-	flag.Int64Var(&timeZone, "time_zone", 8, "time zone offset the utc")
-	flag.BoolVar(&autoBan, "auto_ban", false, "auto ban the content or comment")
-	flag.Int64Var(&banTime, "ban_time", 10, "how much time to bad a content or comment will ban it")
-	flag.BoolVar(&historyRecord, "history_record", true, "Content history record")
+	flag.Int64Var(&timeZone, "time_zone", 8, "Time zone offset the utc")
+	flag.BoolVar(&autoBan, "auto_ban", false, "Auto ban the content or comment")
+	flag.Int64Var(&banTime, "ban_time", 10, "Content or comment will be ban in how much bad's time")
+	flag.BoolVar(&historyRecord, "history_record", true, "Content history can be record")
+	flag.BoolVar(&singleLogin, "single_login", false, "User can only single point login")
+	flag.Int64Var(&sessionExpireTime, "session_expire_time", 7*3600*24, "Login session expire second time, token will destroy after this time")
 
 	// When in production, please set to all false
 	flag.BoolVar(&mailDebug, "email_debug", false, "Email debug")
@@ -123,6 +131,8 @@ func main() {
 	controllers.TimeZone = timeZone
 	controllers.BadTime = banTime
 	controllers.AutoBan = autoBan
+	controllers.SingleLogin = singleLogin
+	controllers.SessionExpireTime = sessionExpireTime
 	model.HistoryRecord = historyRecord
 
 	var err error

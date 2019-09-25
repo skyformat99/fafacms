@@ -13,20 +13,21 @@ import (
 )
 
 var (
+	// redis key
 	redisToken = "ff_tokens"
 	redisUser  = "ff_users"
 )
 
 // diy user redis
 type TokenManage interface {
-	CheckToken(token string) (user *model.User, err error)                 // Check the token, when redis exist direct return user info, others hit the mysql db and save in redis then return
-	SetToken(user *model.User, validTimes int64) (token string, err error) // Set token, expire 7 days
-	RefreshToken(token string) error                                       // Refresh token，token expire time will be again 7 days
-	DeleteToken(token string) error                                        // Delete token when logout
-	RefreshUser(id []int64) error                                          // Refresh redis cache of user info
-	DeleteUserToken(id int64) error                                        // Delete all token of those user
-	DeleteUser(id int64) error                                             // Delete user info in redis cache
-	AddUser(id int64) (user *model.User, err error)                        // Add the user info to session redis，expire days:7
+	CheckAndSetToken(token string, validTimes int64) (user *model.User, err error) // Check the token, when redis exist direct return user info, others hit the mysql db and save in redis then return
+	SetToken(user *model.User, validTimes int64) (token string, err error)         // Set token, expire 7 days
+	RefreshToken(token string, validTime int64) error                              // Refresh token，token expire time will be again 7 days
+	DeleteToken(token string) error                                                // Delete token when logout
+	RefreshUser(id []int64, validTime int64) error                                 // Refresh redis cache of user info
+	DeleteUserToken(id int64) error                                                // Delete all token of those user
+	DeleteUser(id int64) error                                                     // Delete user info in redis cache
+	AddUser(id int64, validTime int64) (user *model.User, err error)               // Add the user info to session redis，expire days:7
 }
 
 type RedisSession struct {
@@ -48,6 +49,10 @@ func (s *RedisSession) Set(key string, value []byte, expireSecond int64) (err er
 	err = conn.Send("SET", key, value)
 	if err != nil {
 		return err
+	}
+
+	if expireSecond <= 0 {
+		expireSecond = 7 * 24 * 3600
 	}
 	err = conn.Send("EXPIRE", key, expireSecond)
 	if err != nil {
@@ -77,6 +82,9 @@ func (s *RedisSession) EXPIRE(key string, expireSecond int) (err error) {
 	}
 
 	defer conn.Close()
+	if expireSecond <= 0 {
+		expireSecond = 7 * 24 * 3600
+	}
 	_, err = conn.Do("EXPIRE", key, expireSecond)
 	return err
 }
@@ -138,7 +146,7 @@ func UserKeys(id int64) string {
 func UserTokenKeys(id int64) string {
 	return fmt.Sprintf("%s_%d_*", redisToken, id)
 }
-func (s *RedisSession) CheckToken(token string) (user *model.User, err error) {
+func (s *RedisSession) CheckAndSetToken(token string, validTimes int64) (user *model.User, err error) {
 	if token == "" {
 		err = errors.New("token nil")
 		return
@@ -174,12 +182,12 @@ func (s *RedisSession) CheckToken(token string) (user *model.User, err error) {
 	if err != nil {
 		return nil, errors.New("token invalid")
 	}
-	user, err = s.AddUser(int64(id))
+	user, err = s.AddUser(int64(id), validTimes)
 	return
 }
 
-func (s *RedisSession) RefreshToken(token string) (err error) {
-	return s.EXPIRE(HashTokenKey(token), 24*3600*7)
+func (s *RedisSession) RefreshToken(token string, validTimes int64) (err error) {
+	return s.EXPIRE(HashTokenKey(token), int(validTimes))
 }
 
 func (s *RedisSession) DeleteToken(token string) (err error) {
@@ -206,7 +214,7 @@ func (s *RedisSession) DeleteUser(id int64) (err error) {
 	return
 }
 
-func (s *RedisSession) AddUser(id int64) (user *model.User, err error) {
+func (s *RedisSession) AddUser(id int64, validTimes int64) (user *model.User, err error) {
 	user = new(model.User)
 	user.Id = id
 	exist, err := user.GetRaw()
@@ -225,7 +233,7 @@ func (s *RedisSession) AddUser(id int64) (user *model.User, err error) {
 	user.ResetCodeExpired = 0
 	userKey := HashUserKey(user.Id, user.Name)
 	raw, _ := json.Marshal(user)
-	err = s.Set(userKey, raw, 24*3600*7)
+	err = s.Set(userKey, raw, validTimes)
 	if err != nil {
 		return nil, err
 	}
@@ -233,9 +241,9 @@ func (s *RedisSession) AddUser(id int64) (user *model.User, err error) {
 	return
 }
 
-func (s *RedisSession) RefreshUser(ids []int64) (err error) {
+func (s *RedisSession) RefreshUser(ids []int64, validTime int64) (err error) {
 	for _, id := range ids {
-		s.AddUser(id)
+		s.AddUser(id, validTime)
 	}
 	return
 }
@@ -260,7 +268,7 @@ func (s *RedisSession) SetToken(user *model.User, validTimes int64) (token strin
 	}
 
 	raw, _ := json.Marshal(user)
-	s.Set(userKey, raw, 24*3600*7)
+	s.Set(userKey, raw, validTimes)
 	return
 }
 

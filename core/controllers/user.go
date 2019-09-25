@@ -670,7 +670,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	err = session.FafaSessionMgr.RefreshUser([]int64{u.Id})
+	err = session.FafaSessionMgr.RefreshUser([]int64{u.Id}, SessionExpireTime)
 	if err != nil {
 		flog.Log.Errorf("UpdateUser err:%s", err.Error())
 		resp.Error = Error(RefreshUserCacheError, err.Error())
@@ -695,8 +695,68 @@ func TakeUser(c *gin.Context) {
 		resp.Error = Error(GetUserSessionError, err.Error())
 		return
 	}
+
+	user := new(model.User)
+	user.Id = u.Id
+	exist, err := model.FaFaRdb.Client.Get(user)
+	if err != nil {
+		flog.Log.Errorf("TakeUser err:%s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !exist {
+		flog.Log.Errorf("TakeUser err:%s", "user  not found")
+		resp.Error = Error(UserNotFound, "")
+		return
+	}
+
+	v := user
+	p := People{}
+	p.Id = v.Id
+	p.Describe = v.Describe
+	p.CreateTime = GetSecond2DateTimes(v.CreateTime)
+	p.CreateTimeInt = v.CreateTime
+
+	if v.Status == 2 {
+		p.IsInBlack = true
+	}
+
+	p.UpdateTimeInt = v.UpdateTime
+	if v.UpdateTime > 0 {
+		p.UpdateTime = GetSecond2DateTimes(v.UpdateTime)
+	}
+
+	p.LoginTimeInt = v.LoginTime
+	if v.LoginTime > 0 {
+		p.LoginTime = GetSecond2DateTimes(v.LoginTime)
+	}
+
+	p.LoginIp = v.LoginIp
+
+	p.NickNameUpdateTimeInt = v.NickNameUpdateTime
+	if v.NickNameUpdateTime > 0 {
+		p.NickNameUpdateTime = GetSecond2DateTimes(v.NickNameUpdateTime)
+	}
+
+	p.ActivateTimeInt = v.ActivateTime
+	if v.ActivateTime > 0 {
+		p.ActivateTime = GetSecond2DateTimes(v.ActivateTime)
+	}
+	p.Email = v.Email
+	p.Github = v.Github
+	p.Name = v.Name
+	p.NickName = v.NickName
+	p.HeadPhoto = v.HeadPhoto
+	p.QQ = v.QQ
+	p.WeChat = v.WeChat
+	p.WeiBo = v.WeiBo
+	p.Gender = v.Gender
+	p.FollowingNum = v.FollowingNum
+	p.FollowedNum = v.FollowedNum
+	p.IsVip = v.Vip == 1
 	resp.Flag = true
-	resp.Data = u
+	resp.Data = p
 }
 
 type ListUserRequest struct {
@@ -930,7 +990,7 @@ func AssignGroupToUser(c *gin.Context) {
 			return
 		}
 
-		err = session.FafaSessionMgr.RefreshUser(req.Users)
+		err = session.FafaSessionMgr.RefreshUser(req.Users, SessionExpireTime)
 		if err != nil {
 			flog.Log.Errorf("AssignGroupToUser err:%s", err.Error())
 			resp.Error = Error(RefreshUserCacheError, err.Error())
@@ -968,7 +1028,7 @@ func AssignGroupToUser(c *gin.Context) {
 			return
 		}
 
-		err = session.FafaSessionMgr.RefreshUser(req.Users)
+		err = session.FafaSessionMgr.RefreshUser(req.Users, SessionExpireTime)
 		if err != nil {
 			flog.Log.Errorf("AssignGroupToUser err:%s", err.Error())
 			resp.Error = Error(RefreshUserCacheError, err.Error())
@@ -1066,7 +1126,7 @@ func UpdateUserAdmin(c *gin.Context) {
 		return
 	}
 
-	err = session.FafaSessionMgr.RefreshUser([]int64{u.Id})
+	err = session.FafaSessionMgr.RefreshUser([]int64{u.Id}, SessionExpireTime)
 	if err != nil {
 		flog.Log.Errorf("UpdateUserAdmin err:%s", err.Error())
 		resp.Error = Error(RefreshUserCacheError, err.Error())

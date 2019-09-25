@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
+	"github.com/hunterhug/fafacms/core/config"
 	"github.com/hunterhug/fafacms/core/flog"
 	"github.com/hunterhug/fafacms/core/model"
 	"github.com/hunterhug/fafacms/core/util"
@@ -24,34 +25,39 @@ func GetSecond2DateTimes(second int64) string {
 func Home(c *gin.Context) {
 	resp := new(Resp)
 	resp.Flag = true
-	resp.Data = "FaFa CMS: https://github.com/hunterhug/fafacms"
+	resp.Data = "FaFa CMS: https://github.com/hunterhug/fafacms Version:" + config.Version
 	defer func() {
 		c.JSON(200, resp)
 	}()
 }
 
 type People struct {
-	Id              int64  `json:"id"`
-	Name            string `json:"name"`
-	NickName        string `json:"nick_name"`
-	Email           string `json:"email"`
-	WeChat          string `json:"wechat"`
-	WeiBo           string `json:"weibo"`
-	Github          string `json:"github"`
-	QQ              string `json:"qq"`
-	Gender          int    `json:"gender"`
-	Describe        string `json:"describe"`
-	HeadPhoto       string `json:"head_photo"`
-	CreateTime      string `json:"create_time"`
-	CreateTimeInt   int64  `json:"create_time_int"`
-	UpdateTime      string `json:"update_time,omitempty"`
-	UpdateTimeInt   int64  `json:"update_time_int,omitempty"`
-	ActivateTime    string `json:"activate_time,omitempty"`
-	ActivateTimeInt int64  `json:"activate_time_int,omitempty"`
-	LoginTime       string `json:"login_time,omitempty"`
-	LoginTimeInt    int64  `json:"login_time_int,omitempty"`
-	IsInBlack       bool   `json:"is_in_black"`
-	IsVip           bool   `json:"is_vip"`
+	Id                    int64  `json:"id"`
+	Name                  string `json:"name"`
+	NickName              string `json:"nick_name"`
+	Email                 string `json:"email"`
+	WeChat                string `json:"wechat"`
+	WeiBo                 string `json:"weibo"`
+	Github                string `json:"github"`
+	QQ                    string `json:"qq"`
+	Gender                int    `json:"gender"`
+	Describe              string `json:"describe"`
+	HeadPhoto             string `json:"head_photo"`
+	CreateTime            string `json:"create_time"`
+	CreateTimeInt         int64  `json:"create_time_int"`
+	UpdateTime            string `json:"update_time,omitempty"`
+	UpdateTimeInt         int64  `json:"update_time_int,omitempty"`
+	ActivateTime          string `json:"activate_time,omitempty"`
+	ActivateTimeInt       int64  `json:"activate_time_int,omitempty"`
+	LoginTime             string `json:"login_time,omitempty"`
+	LoginTimeInt          int64  `json:"login_time_int,omitempty"`
+	LoginIp               string `json:"login_ip,omitempty"`
+	NickNameUpdateTimeInt int64  `json:"nick_name_update_time,omitempty"`
+	NickNameUpdateTime    string `json:"nick_name_update_time,omitempty"`
+	IsInBlack             bool   `json:"is_in_black"`
+	IsVip                 bool   `json:"is_vip"`
+	FollowedNum           int64  `json:"followed_num"`
+	FollowingNum          int64  `json:"following_num"`
 }
 
 type PeoplesRequest struct {
@@ -78,7 +84,6 @@ func Peoples(c *gin.Context) {
 		resp.Error = errResp
 		return
 	}
-
 
 	var validate = validator.New()
 	err := validate.Struct(req)
@@ -162,6 +167,8 @@ func Peoples(c *gin.Context) {
 		p.WeiBo = v.WeiBo
 		p.Gender = v.Gender
 		p.IsVip = v.Vip == 1
+		p.FollowedNum = v.FollowedNum
+		p.FollowingNum = v.FollowingNum
 		peoples = append(peoples, p)
 	}
 	respResult.Users = peoples
@@ -498,7 +505,8 @@ func UserInfo(c *gin.Context) {
 	p.WeChat = v.WeChat
 	p.WeiBo = v.WeiBo
 	p.Gender = v.Gender
-
+	p.FollowingNum = v.FollowingNum
+	p.FollowedNum = v.FollowedNum
 	p.IsVip = v.Vip == 1
 	resp.Flag = true
 	resp.Data = p
@@ -558,7 +566,7 @@ func UserCount(c *gin.Context) {
 
 	req.UserId = user.Id
 
-	sql := fmt.Sprintf("SELECT DATE_FORMAT(from_unixtime(first_publish_time + %d * 3600)", TimeZone) + ",'%Y%m%d') days,count(id) count FROM `fafacms_content` WHERE first_publish_time!=0 and user_id=? and version>0 and status=0 group by days;"
+	sql := fmt.Sprintf("SELECT DATE_FORMAT(from_unixtime(first_publish_time + %d * 3600)", TimeZone) + ",'%Y%m%d') days,count(id) count FROM `fafacms_content` WHERE first_publish_time!=0 and user_id=? and version>0 and status!=1 and status!=3 group by days;"
 	result, err := model.FaFaRdb.Client.QueryString(sql, req.UserId)
 	if err != nil {
 		flog.Log.Errorf("UserCount err:%s", err.Error())

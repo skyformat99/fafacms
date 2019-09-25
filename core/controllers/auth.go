@@ -17,6 +17,12 @@ var (
 
 	// those api will be check resource
 	AdminUrl map[string]int64
+
+	// can only single login, one token gen will destroy other tokens
+	SingleLogin bool
+
+	// redis key expire time
+	SessionExpireTime int64 = 24 * 3600 * 7
 )
 
 // api access auth filter
@@ -115,7 +121,7 @@ func GetUserSession(c *gin.Context) (*model.User, error) {
 
 	// get token from HTTP header and check if it is exist
 	token := c.GetHeader(AuthHeader)
-	user, err := session.FafaSessionMgr.CheckToken(token)
+	user, err := session.FafaSessionMgr.CheckAndSetToken(token, SessionExpireTime)
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +138,10 @@ func SetUserSession(user *model.User) (string, error) {
 
 	// single login
 	// we only allow one token exist, other token will be delete.
-	session.FafaSessionMgr.DeleteUserToken(user.Id)
-	return session.FafaSessionMgr.SetToken(user, 24*3600*7)
+	if SingleLogin {
+		session.FafaSessionMgr.DeleteUserToken(user.Id)
+	}
+	return session.FafaSessionMgr.SetToken(user, SessionExpireTime)
 }
 
 func DeleteUserSession(c *gin.Context) error {
@@ -149,6 +157,6 @@ func DeleteUserAllSession(id int64) error {
 
 func RefreshUserSession(c *gin.Context) error {
 	token := c.GetHeader(AuthHeader)
-	err := session.FafaSessionMgr.RefreshToken(token)
+	err := session.FafaSessionMgr.RefreshToken(token, SessionExpireTime)
 	return err
 }

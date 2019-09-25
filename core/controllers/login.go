@@ -93,9 +93,9 @@ func Login(c *gin.Context) {
 	u.UpdateLoginInfo()
 
 	// Refresh the user info in session(redis)
-	session.FafaSessionMgr.RefreshUser([]int64{u.Id})
+	session.FafaSessionMgr.RefreshUser([]int64{u.Id}, SessionExpireTime)
 
-	// Not activate or black user can login, but those auth api can not use
+	// Activate or black user can login, but those auth api can not use
 	token, err := SetUserSession(uu)
 	if err != nil {
 		flog.Log.Errorf("login err:%s", err.Error())

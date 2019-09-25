@@ -174,6 +174,11 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 		userIds = append(userIds, k)
 	}
 
+	users, err = GetUser(userIds)
+	return
+}
+
+func GetUser(userIds []int64) (users map[int64]UserHelper, err error) {
 	uu := make([]User, 0)
 	err = FaFaRdb.Client.Cols("id", "vip", "name", "nick_name", "head_photo").In("id", userIds).Find(&uu)
 	if err != nil {

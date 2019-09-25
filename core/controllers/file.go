@@ -7,6 +7,7 @@ import (
 	"github.com/hunterhug/fafacms/core/config"
 	. "github.com/hunterhug/fafacms/core/flog"
 	"github.com/hunterhug/fafacms/core/model"
+	myutil "github.com/hunterhug/fafacms/core/util"
 	"github.com/hunterhug/fafacms/core/util/oss"
 	"github.com/hunterhug/go_image"
 	"io/ioutil"
@@ -14,7 +15,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	myutil "github.com/hunterhug/fafacms/core/util"
 )
 
 var scaleType = []string{"jpg", "jpeg", "png"}
@@ -181,7 +181,7 @@ func UploadFile(c *gin.Context) {
 			// Oss mode
 			p.StoreType = 1
 			p.Url = fmt.Sprintf("%s.%s/%s/%s", config.FaFaConfig.OssConfig.BucketName, config.FaFaConfig.OssConfig.Endpoint, helpPath, fileName)
-			err = oss.SaveFile(config.FaFaConfig.OssConfig, p.Url, raw)
+			err = oss.SaveFile(config.FaFaConfig.OssConfig, helpPath+"/"+fileName, raw)
 			if err != nil {
 				Log.Errorf("upload err:%s", err.Error())
 				resp.Error = Error(UploadFileError, err.Error())
@@ -207,7 +207,7 @@ func UploadFile(c *gin.Context) {
 					resp.Error = Error(UploadFileError, err.Error())
 					return
 				}
-				err := go_image.ScaleF2F(fileAbName, fileScaleAbName, 200)
+				err := go_image.ScaleF2F(fileAbName, fileScaleAbName, 500)
 				if err != nil {
 					Log.Errorf("upload err:%s", err.Error())
 					resp.Error = Error(UploadFileError, err.Error())

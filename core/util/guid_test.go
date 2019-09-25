@@ -8,7 +8,7 @@ import (
 )
 
 func TestListFile(t *testing.T) {
-	err := go_image.ScaleF2F("./timg.jpeg", "./timg_x.jpeg", 200)
+	err := go_image.ScaleF2F("./timg.jpeg", "./timg_x.jpeg", 500)
 	fmt.Printf("%#v", err)
 }
 

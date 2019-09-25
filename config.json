@@ -8,9 +8,9 @@
     "CloseRegister": false
   },
   "OssConfig": {
-    "Endpoint": "oss-cn-qingdao.aliyuncs.com",
+    "Endpoint": "oss-cn-shenzhen.aliyuncs.com",
     "BucketName": "syoss",
-    "AccessKeyId": "",
+    "AccessKeyId": "LTAIY0KMLq6AodZ9",
     "AccessKeySecret": ""
   },
   "DbConfig": {

@@ -253,6 +253,7 @@ type CommentBad struct {
 
 func (c *Comment) InsertOne() error {
 	se := FaFaRdb.Client.NewSession()
+	defer se.Close()
 	err := se.Begin()
 	if err != nil {
 		return err
@@ -308,6 +309,7 @@ func (c *Comment) UpdateStatus() (int64, error) {
 	}
 
 	se := FaFaRdb.Client.NewSession()
+	defer se.Close()
 	err := se.Begin()
 	if err != nil {
 		return 0, err
@@ -341,6 +343,7 @@ func (c *Comment) Delete() (err error) {
 	}
 
 	se := FaFaRdb.Client.NewSession()
+	defer se.Close()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -401,6 +404,7 @@ func (c *CommentCool) Create() (err error) {
 	c.CreateTime = time.Now().Unix()
 
 	se := FaFaRdb.Client.NewSession()
+	defer se.Close()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -441,6 +445,7 @@ func (c *CommentCool) Delete() (err error) {
 		return errors.New("where is empty")
 	}
 	se := FaFaRdb.Client.NewSession()
+	defer se.Close()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -498,6 +503,7 @@ func (c *CommentBad) Create() (err error) {
 
 	c.CreateTime = time.Now().Unix()
 	se := FaFaRdb.Client.NewSession()
+	defer se.Close()
 	err = se.Begin()
 	if err != nil {
 		return err
@@ -538,6 +544,7 @@ func (c *CommentBad) Delete() (err error) {
 		return errors.New("where is empty")
 	}
 	se := FaFaRdb.Client.NewSession()
+	defer se.Close()
 	err = se.Begin()
 	if err != nil {
 		return err

@@ -982,6 +982,15 @@ func SortNode(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
+
+		err = session.Commit()
+		if err != nil {
+			session.Rollback()
+			flog.Log.Errorf("SortNode err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+		
 		resp.Flag = true
 		return
 	}

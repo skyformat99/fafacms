@@ -182,6 +182,7 @@ func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
 
 	if isBanChange {
 		se := FaFaRdb.Client.NewSession()
+		defer se.Close()
 		err := se.Begin()
 		if err != nil {
 			return 0, err

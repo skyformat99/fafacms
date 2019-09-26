@@ -117,14 +117,19 @@ var (
 		"/content/history/delete":      {"Delete Content History Self Real", controllers.ReallyDeleteHistoryContent, POST, false},   // 真删除历史内容
 		"/content/cool":                {"Cool the Content Self", controllers.CoolContent, GP, false},                               // 点赞内容
 		"/content/bad":                 {"Bad the Content Self", controllers.BadContent, GP, false},                                 // 举报内容
+		"/comment/create":              {"Create the Comment Self", controllers.CreateComment, POST, false},                         // 创建评论
+		"/comment/delete":              {"Delete the Comment Self", controllers.DeleteComment, POST, false},                         // 删除评论，逻辑删除
+		"/comment/take":                {"Take the Comment Self", controllers.TakeComment, GP, false},                               // 获取评论
+		"/comment/cool":                {"Cool the Comment Self", controllers.CoolComment, GP, false},                               // 点赞评论
+		"/comment/bad":                 {"Bad the Comment Self", controllers.BadComment, GP, false},                                 // 举报评论
+		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},                               // 管理员列出评论
+		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.UpdateComment, GP, true},                    // 管理员评论违禁处理
 
-		"/comment/create":              {"Create the Comment Self", controllers.CreateComment, POST, false},      // 创建评论
-		"/comment/delete":              {"Delete the Comment Self", controllers.DeleteComment, POST, false},      // 删除评论，逻辑删除
-		"/comment/take":                {"Take the Comment Self", controllers.TakeComment, GP, false},            // 获取评论
-		"/comment/cool":                {"Cool the Comment Self", controllers.CoolComment, GP, false},            // 点赞评论
-		"/comment/bad":                 {"Bad the Comment Self", controllers.BadComment, GP, false},              // 举报评论
-		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},            // 管理员列出评论
-		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 管理员评论违禁处理
+		"/relation/follow/add":     {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 关注
+		"/relation/follow/remove":  {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 关注解除
+		"/relation/followed/list":  {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 查看谁关注了你
+		"/relation/following/list": {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 查看你关注了谁
+		"/relation/admin/list":     {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 查看所有关系
 	}
 )
 

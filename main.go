@@ -181,7 +181,8 @@ func main() {
 			model.File{},           // File Table, your picture file and some will save in.
 			model.Comment{},        // Comment Table, comment for content, comment for comment
 			model.CommentCool{},    // Like the Content Cool
-			model.CommentBad{},     // Emm, you know
+			model.CommentBad{},     // Like the Content Bad
+			model.Relation{},       // Who follow who
 			//model.Message{},        // Message inside
 			//model.Log{},            // Log Table, not use
 		})

@@ -82,6 +82,7 @@ type UserHelper struct {
 	IsVip         bool   `json:"is_vip"`
 	ShortDescribe string `json:"short_describe"`
 	Gender        int    `json:"gender"`
+	IsBlack       bool   `json:"is_black"`
 }
 
 type CommentHelper struct {
@@ -183,7 +184,7 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 func GetUser(userIds []int64) (users map[int64]UserHelper, err error) {
 	users = make(map[int64]UserHelper)
 	uu := make([]User, 0)
-	err = FaFaRdb.Client.Cols("id", "vip", "name", "nick_name", "head_photo", "short_describe", "gender").In("id", userIds).Find(&uu)
+	err = FaFaRdb.Client.Cols("id", "vip", "name", "nick_name", "head_photo", "status", "short_describe", "gender").Where("status!=?", 0).In("id", userIds).Find(&uu)
 	if err != nil {
 		return
 	}
@@ -198,6 +199,7 @@ func GetUser(userIds []int64) (users map[int64]UserHelper, err error) {
 			Gender:        v.Gender,
 		}
 
+		temp.IsBlack = v.Status == 2
 		temp.IsVip = v.Vip == 1
 		users[v.Id] = temp
 	}

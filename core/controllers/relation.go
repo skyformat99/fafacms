@@ -34,7 +34,7 @@ func AddRelation(c *gin.Context) {
 	who := new(model.User)
 	who.Id = req.UserId
 	who.Name = req.UserName
-	ok, err := who.GetRaw()
+	ok, err := who.GetActivateRaw()
 	if err != nil {
 		flog.Log.Errorf("RelationAdd err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -95,7 +95,7 @@ func MinuteRelation(c *gin.Context) {
 	who := new(model.User)
 	who.Id = req.UserId
 	who.Name = req.UserName
-	ok, err := who.GetRaw()
+	ok, err := who.GetActivateRaw()
 	if err != nil {
 		flog.Log.Errorf("RelationMinute err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())

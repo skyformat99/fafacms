@@ -56,6 +56,10 @@ func (u *User) GetRaw() (bool, error) {
 	return FaFaRdb.Client.Get(u)
 }
 
+func (u *User) GetActivateRaw() (bool, error) {
+	return FaFaRdb.Client.Where("status!=?", 0).Get(u)
+}
+
 func (u *User) Exist() (bool, error) {
 	if u.Id == 0 && u.Name == "" && u.GroupId == 0 {
 		return false, errors.New("where is empty")

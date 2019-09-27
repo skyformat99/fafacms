@@ -183,7 +183,7 @@ func main() {
 			model.CommentCool{},    // Like the Content Cool
 			model.CommentBad{},     // Like the Content Bad
 			model.Relation{},       // Who follow who
-			//model.Message{},        // Message inside
+			model.Message{},        // Message inside
 			//model.Log{},            // Log Table, not use
 		})
 	}

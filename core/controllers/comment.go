@@ -594,8 +594,8 @@ func ListHomeComment(c *gin.Context) {
 	}
 
 	if len(backContents) == 0 {
-		flog.Log.Errorf("ListHomeComment err: %s", "comment not found")
-		resp.Error = Error(CommentNotFound, "")
+		flog.Log.Errorf("ListHomeComment err: %s", "content not found")
+		resp.Error = Error(ContentNotFound, "")
 		return
 	}
 

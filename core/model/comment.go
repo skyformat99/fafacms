@@ -26,6 +26,7 @@ type ContentHelper struct {
 	Seo         string `json:"seo"`
 	Status      int    `json:"status"`
 	CommentNum  int64  `json:"comment_num"`
+	IsYourself  bool   `json:"is_yourself"`
 }
 
 // get contents from id, if all false, which is deleted or hide will not include in map
@@ -67,6 +68,10 @@ func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]C
 			if !all && yourUserId != temp.UserId {
 				continue
 			}
+
+			if yourUserId == temp.UserId {
+				temp.IsYourself = true
+			}
 		}
 		back[v.Id] = temp
 	}
@@ -98,6 +103,7 @@ type CommentHelper struct {
 	UserId        int64  `json:"user_id"`
 	Cool          int64  `json:"cool"`
 	Bad           int64  `json:"bad"`
+	IsYourself    bool   `json:"is_yourself"`
 }
 
 // get comments from id, if all false, some will not show, and user info related will also show
@@ -144,6 +150,10 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 				if yourUserId != temp.UserId && temp.IsAnonymous {
 					temp.UserId = 0
 				}
+
+				if yourUserId == temp.UserId {
+					temp.IsYourself = true
+				}
 			} else {
 
 				// userId is you, do nothing
@@ -157,6 +167,8 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 					if temp.IsBan {
 						temp.Describe = ""
 					}
+				} else {
+					temp.IsYourself = true
 				}
 			}
 		}

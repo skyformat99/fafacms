@@ -125,11 +125,13 @@ var (
 		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},                               // 管理员列出评论
 		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.UpdateComment, GP, true},                    // 管理员评论违禁处理
 
-		"/relation/follow/add":     {"Follow add Who", controllers.AddRelation, GP, false},          // 关注
-		"/relation/follow/minute":  {"Follow Minute Who", controllers.MinuteRelation, GP, false},       // 关注解除
-		"/relation/followed/list":  {"List Who Follow You", controllers.ListFollowedRelation, GP, true},  // 查看谁关注了你
-		"/relation/following/list": {"List You Follow Who", controllers.ListFollowingRelation, GP, true}, // 查看你关注了谁
-		"/relation/admin/list":     {"List Who Follow Who", controllers.ListAllRelation, GP, true},       // 查看所有关系
+		"/relation/follow/add":     {"Follow add Who", controllers.AddRelation, GP, false},                    // 关注
+		"/relation/follow/minute":  {"Follow Minute Who", controllers.MinuteRelation, GP, false},              // 关注解除
+		"/relation/followed/me":    {"List Who Follow You", controllers.ListFollowedRelationOfMe, GP, false},  // 查看谁关注了你
+		"/relation/following/me":   {"List You Follow Who", controllers.ListFollowingRelationOfMe, GP, false}, // 查看你关注了谁
+		"/relation/followed/list":  {"List Who Follow You", controllers.ListFollowedRelation, GP, false},      // 查看谁关注了用户B，然后你和谁的关系
+		"/relation/following/list": {"List You Follow Who", controllers.ListFollowingRelation, GP, false},     // 查看用户A关注了谁，然后你和谁的关系
+		"/relation/admin/list":     {"List Who Follow Who Admin", controllers.ListAllRelation, GP, true},      // 查看所有关系
 	}
 )
 

@@ -42,6 +42,7 @@ type People struct {
 	QQ                    string `json:"qq"`
 	Gender                int    `json:"gender"`
 	Describe              string `json:"describe"`
+	ShortDescribe         string `json:"short_describe"`
 	HeadPhoto             string `json:"head_photo"`
 	CreateTime            string `json:"create_time"`
 	CreateTimeInt         int64  `json:"create_time_int"`
@@ -135,6 +136,7 @@ func Peoples(c *gin.Context) {
 	for _, v := range users {
 		p := People{}
 		p.Id = v.Id
+		p.ShortDescribe = v.ShortDescribe
 		p.Describe = v.Describe
 		p.CreateTimeInt = v.CreateTime
 		p.CreateTime = GetSecond2DateTimes(v.CreateTime)
@@ -475,6 +477,7 @@ func UserInfo(c *gin.Context) {
 	p := People{}
 	p.Id = v.Id
 	p.Describe = v.Describe
+	p.ShortDescribe = v.ShortDescribe
 	p.CreateTime = GetSecond2DateTimes(v.CreateTime)
 	p.CreateTimeInt = v.CreateTime
 

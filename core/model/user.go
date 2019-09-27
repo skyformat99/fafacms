@@ -19,6 +19,7 @@ type User struct {
 	QQ                  string `json:"qq" xorm:"varchar(100)"`
 	Password            string `json:"password,omitempty" xorm:"varchar(100)"`
 	Gender              int    `json:"gender" xorm:"not null comment('0 unknow,1 boy,2 girl') TINYINT(1)"`
+	ShortDescribe       string `json:"short_describe"`
 	Describe            string `json:"describe" xorm:"TEXT"`
 	HeadPhoto           string `json:"head_photo" xorm:"varchar(700)"`
 	CreateTime          int64  `json:"create_time"`

@@ -75,11 +75,13 @@ func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]C
 }
 
 type UserHelper struct {
-	Id        int64  `json:"id"`
-	Name      string `json:"name"`
-	NickName  string `json:"nick_name"`
-	HeadPhoto string `json:"head_photo"`
-	IsVip     bool   `json:"is_vip"`
+	Id            int64  `json:"id"`
+	Name          string `json:"name"`
+	NickName      string `json:"nick_name"`
+	HeadPhoto     string `json:"head_photo"`
+	IsVip         bool   `json:"is_vip"`
+	ShortDescribe string `json:"short_describe"`
+	Gender        int    `json:"gender"`
 }
 
 type CommentHelper struct {
@@ -179,18 +181,21 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 }
 
 func GetUser(userIds []int64) (users map[int64]UserHelper, err error) {
+	users = make(map[int64]UserHelper)
 	uu := make([]User, 0)
-	err = FaFaRdb.Client.Cols("id", "vip", "name", "nick_name", "head_photo").In("id", userIds).Find(&uu)
+	err = FaFaRdb.Client.Cols("id", "vip", "name", "nick_name", "head_photo", "short_describe", "gender").In("id", userIds).Find(&uu)
 	if err != nil {
 		return
 	}
 
 	for _, v := range uu {
 		temp := UserHelper{
-			Id:        v.Id,
-			Name:      v.Name,
-			NickName:  v.NickName,
-			HeadPhoto: v.HeadPhoto,
+			Id:            v.Id,
+			Name:          v.Name,
+			NickName:      v.NickName,
+			HeadPhoto:     v.HeadPhoto,
+			ShortDescribe: v.ShortDescribe,
+			Gender:        v.Gender,
 		}
 
 		temp.IsVip = v.Vip == 1

@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hunterhug/fafacms/core/flog"
 	"github.com/hunterhug/fafacms/core/model"
+	"github.com/hunterhug/fafacms/core/util"
 	"math"
 )
 
@@ -139,11 +140,42 @@ type ListRelationRequest struct {
 }
 
 type ListRelationResponse struct {
-	Relations []model.Relation `json:"relations"`
+	Relations []model.Relation           `json:"relations"`
+	Users     map[int64]model.UserHelper `json:"users"`
 	PageHelp
 }
 
 // who follow you
+func ListFollowedRelationOfMe(c *gin.Context) {
+	resp := new(Resp)
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("ListFollowedRelationOfMe err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		JSONL(c, 200, nil, resp)
+		return
+	}
+
+	uid := uu.Id
+	ListRelation(c, 0, uid, uid)
+}
+
+// you follow who
+func ListFollowingRelationOfMe(c *gin.Context) {
+	resp := new(Resp)
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("ListFollowingRelationOfMe err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		JSONL(c, 200, nil, resp)
+		return
+	}
+
+	uid := uu.Id
+	ListRelation(c, uid, 0, uid)
+}
+
+// who follow B
 func ListFollowedRelation(c *gin.Context) {
 	resp := new(Resp)
 	uu, err := GetUserSession(c)
@@ -155,10 +187,10 @@ func ListFollowedRelation(c *gin.Context) {
 	}
 
 	uid := uu.Id
-	ListRelation(c, 0, uid)
+	ListRelation(c, 0, -1, uid)
 }
 
-// you follow who
+// A follow who
 func ListFollowingRelation(c *gin.Context) {
 	resp := new(Resp)
 	uu, err := GetUserSession(c)
@@ -170,15 +202,15 @@ func ListFollowingRelation(c *gin.Context) {
 	}
 
 	uid := uu.Id
-	ListRelation(c, uid, 0)
+	ListRelation(c, -1, 0, uid)
 }
 
 // who follow who
 func ListAllRelation(c *gin.Context) {
-	ListRelation(c, 0, 0)
+	ListRelation(c, 0, 0, 0)
 }
 
-func ListRelation(c *gin.Context, userAId int64, userBId int64) {
+func ListRelation(c *gin.Context, userAId int64, userBId int64, me int64) {
 	resp := new(Resp)
 	req := new(ListRelationRequest)
 	defer func() {
@@ -197,12 +229,32 @@ func ListRelation(c *gin.Context, userAId int64, userBId int64) {
 	// group list where prepare
 	session.Table(new(model.Relation)).Where("1=1")
 
-	if userAId != 0 {
+	if userAId == -1 {
+		// A follow who, so A should not empty
+		if req.UserAId == 0 && req.UserAName == "" {
+			flog.Log.Errorf("ListRelation err: %s", "user A info empty")
+			resp.Error = Error(ParasError, "user A info empty")
+			return
+		}
+	}
+
+	// who follow B, so B should not empty
+	if userBId == -1 {
+		if req.UserBId == 0 && req.UserBName == "" {
+			flog.Log.Errorf("ListRelation err: %s", "user B info empty")
+			resp.Error = Error(ParasError, "user B info empty")
+			return
+		}
+	}
+
+	// you follow who
+	if userAId > 0 {
 		req.UserAId = userAId
 		req.UserAName = ""
 	}
 
-	if userBId != 0 {
+	// who follow you
+	if userBId > 0 {
 		req.UserBId = userBId
 		req.UserBName = ""
 	}
@@ -260,23 +312,130 @@ func ListRelation(c *gin.Context, userAId int64, userBId int64) {
 		}
 	}
 
-	for k, v := range cs {
-		temp := new(model.Relation)
-		temp.UserAId = v.UserBId
-		temp.UserBId = v.UserAId
-		num, err := temp.Count()
-		if err != nil {
-			flog.Log.Errorf("ListRelation err:%s", err.Error())
-			resp.Error = Error(DBError, err.Error())
-			return
+	// search the user info
+	userIds := make(map[int64]struct{})
+
+	// search other's relation
+	if userAId == -1 || userBId == -1 {
+		// A follow who
+		if userAId == -1 {
+			for k, v := range cs {
+				// you follow who
+				temp := new(model.Relation)
+				temp.UserAId = me
+				temp.UserBId = v.UserBId
+
+				// those people should take info
+				userIds[v.UserBId] = struct{}{}
+				userIds[v.UserAId] = struct{}{}
+				num, err := temp.Count()
+
+				if err != nil {
+					flog.Log.Errorf("ListRelation err:%s", err.Error())
+					resp.Error = Error(DBError, err.Error())
+					return
+				}
+
+				if num == 0 {
+					continue
+				}
+
+				cs[k].IsFollowing = true
+
+				// who follow you
+				temp1 := new(model.Relation)
+				temp1.UserAId = v.UserBId
+				temp1.UserBId = me
+				num, err = temp.Count()
+				if err != nil {
+					flog.Log.Errorf("ListRelation err:%s", err.Error())
+					resp.Error = Error(DBError, err.Error())
+					return
+				}
+
+				if num == 0 {
+					continue
+				}
+
+				cs[k].IsBoth = true
+			}
 		}
 
-		if num > 0 {
-			cs[k].IsBoth = true
+		// who follow B
+		if userBId == -1 {
+			for k, v := range cs {
+				// you follow who
+				temp := new(model.Relation)
+				temp.UserAId = me
+				temp.UserBId = v.UserAId
+
+				// those people should take info
+				userIds[v.UserBId] = struct{}{}
+				userIds[v.UserAId] = struct{}{}
+				num, err := temp.Count()
+				if err != nil {
+					flog.Log.Errorf("ListRelation err:%s", err.Error())
+					resp.Error = Error(DBError, err.Error())
+					return
+				}
+
+				if num == 0 {
+					continue
+				}
+
+				cs[k].IsFollowing = true
+
+				// who follow you
+				temp1 := new(model.Relation)
+				temp1.UserAId = v.UserAId
+				temp1.UserBId = me
+				num, err = temp.Count()
+				if err != nil {
+					flog.Log.Errorf("ListRelation err:%s", err.Error())
+					resp.Error = Error(DBError, err.Error())
+					return
+				}
+
+				if num == 0 {
+					continue
+				}
+
+				cs[k].IsBoth = true
+			}
+		}
+	} else {
+		// admin or me search relation
+		for k, v := range cs {
+			temp := new(model.Relation)
+			temp.UserAId = v.UserBId
+			temp.UserBId = v.UserAId
+
+			// those people should take info
+			userIds[v.UserBId] = struct{}{}
+			userIds[v.UserAId] = struct{}{}
+			num, err := temp.Count()
+			if err != nil {
+				flog.Log.Errorf("ListRelation err:%s", err.Error())
+				resp.Error = Error(DBError, err.Error())
+				return
+			}
+
+			if num > 0 {
+				cs[k].IsBoth = true
+			}
 		}
 	}
+
+	users, err := model.GetUser(util.MapToArray(userIds))
+	if err != nil {
+		flog.Log.Errorf("ListRelation err:%s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
 	respResult := new(ListRelationResponse)
 	respResult.Relations = cs
+	respResult.Users = users
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
 	respResult.PageHelp = *p
 	resp.Data = respResult

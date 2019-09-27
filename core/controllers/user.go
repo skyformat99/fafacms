@@ -16,18 +16,19 @@ import (
 )
 
 type RegisterUserRequest struct {
-	Name       string `json:"name" validate:"required,alphanumunicode"`
-	NickName   string `json:"nick_name" validate:"required"`
-	Email      string `json:"email" validate:"required,email"`
-	WeChat     string `json:"wechat" validate:"omitempty,alphanumunicode"`
-	WeiBo      string `json:"weibo" validate:"omitempty,url"`
-	Github     string `json:"github" validate:"omitempty,url"`
-	QQ         string `json:"qq" validate:"omitempty,numeric"`
-	Password   string `json:"password" validate:"alphanumunicode"`
-	RePassword string `json:"repassword" validate:"eqfield=Password"`
-	Gender     int    `json:"gender" validate:"oneof=0 1 2"`
-	Describe   string `json:"describe"`
-	ImagePath  string `json:"image_path"`
+	Name          string `json:"name" validate:"required,alphanumunicode"`
+	NickName      string `json:"nick_name" validate:"required"`
+	Email         string `json:"email" validate:"required,email"`
+	WeChat        string `json:"wechat" validate:"omitempty,alphanumunicode"`
+	WeiBo         string `json:"weibo" validate:"omitempty,url"`
+	Github        string `json:"github" validate:"omitempty,url"`
+	QQ            string `json:"qq" validate:"omitempty,numeric"`
+	Password      string `json:"password" validate:"alphanumunicode"`
+	RePassword    string `json:"repassword" validate:"eqfield=Password"`
+	Gender        int    `json:"gender" validate:"oneof=0 1 2"`
+	ShortDescribe string `json:"short_describe"`
+	Describe      string `json:"describe"`
+	ImagePath     string `json:"image_path"`
 }
 
 // User register, anyone can use email register
@@ -115,6 +116,7 @@ func RegisterUser(c *gin.Context) {
 	// activate code gen
 	u.ActivateCode = util.GetGUID()
 	u.ActivateCodeExpired = time.Now().Add(5 * time.Minute).Unix()
+	u.ShortDescribe = req.ShortDescribe
 	u.Describe = req.Describe
 	u.Password = req.Password
 	u.Gender = req.Gender
@@ -245,6 +247,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	u.Describe = req.Describe
+	u.ShortDescribe = req.ShortDescribe
 	u.NickName = req.NickName
 	u.Password = req.Password
 	u.Gender = req.Gender
@@ -553,14 +556,15 @@ func ChangePasswordOfUser(c *gin.Context) {
 }
 
 type UpdateUserRequest struct {
-	NickName  string `json:"nick_name" validate:"omitempty"`
-	WeChat    string `json:"wechat" validate:"omitempty,alphanumunicode"`
-	WeiBo     string `json:"weibo" validate:"omitempty,url"`
-	Github    string `json:"github" validate:"omitempty,url"`
-	QQ        string `json:"qq" validate:"omitempty,numeric"`
-	Gender    int    `json:"gender" validate:"oneof=0 1 2"`
-	Describe  string `json:"describe"`
-	ImagePath string `json:"image_path"`
+	NickName      string `json:"nick_name" validate:"omitempty"`
+	WeChat        string `json:"wechat" validate:"omitempty,alphanumunicode"`
+	WeiBo         string `json:"weibo" validate:"omitempty,url"`
+	Github        string `json:"github" validate:"omitempty,url"`
+	QQ            string `json:"qq" validate:"omitempty,numeric"`
+	Gender        int    `json:"gender" validate:"oneof=0 1 2"`
+	Describe      string `json:"describe"`
+	ShortDescribe string `json:"short_describe"`
+	ImagePath     string `json:"image_path"`
 }
 
 func UpdateUser(c *gin.Context) {
@@ -658,6 +662,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	u.Describe = req.Describe
+	u.ShortDescribe = req.ShortDescribe
 	u.Gender = req.Gender
 	u.WeChat = req.WeChat
 	u.QQ = req.QQ
@@ -714,6 +719,7 @@ func TakeUser(c *gin.Context) {
 	v := user
 	p := People{}
 	p.Id = v.Id
+	p.ShortDescribe = v.ShortDescribe
 	p.Describe = v.Describe
 	p.CreateTime = GetSecond2DateTimes(v.CreateTime)
 	p.CreateTimeInt = v.CreateTime

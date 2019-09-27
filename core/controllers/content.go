@@ -1304,10 +1304,12 @@ func ListContentHelper(c *gin.Context, userId int64) {
 }
 
 type ListContentHistoryRequest struct {
-	Id     int64    `json:"content_id"`
-	UserId int64    `json:"user_id"`
-	Types  int      `json:"types" validate:"oneof=-1 0 1 2"`
-	Sort   []string `json:"sort"`
+	Id              int64    `json:"content_id"`
+	UserId          int64    `json:"user_id"`
+	Types           int      `json:"types" validate:"oneof=-1 0 1 2"`
+	CreateTimeBegin int64    `json:"create_time_begin"`
+	CreateTimeEnd   int64    `json:"create_time_end"`
+	Sort            []string `json:"sort"`
 	PageHelp
 }
 
@@ -1377,6 +1379,14 @@ func ListContentHistoryHelper(c *gin.Context, userId int64) {
 
 	if req.Types != -1 {
 		session.And("types=?", req.Types)
+	}
+
+	if req.CreateTimeBegin > 0 {
+		session.And("create_time>=?", req.CreateTimeBegin)
+	}
+
+	if req.CreateTimeEnd > 0 {
+		session.And("create_time<?", req.CreateTimeEnd)
 	}
 
 	// count num

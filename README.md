@@ -6,7 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/hunterhug/fafacms)](https://goreportcard.com/report/github.com/hunterhug/fafacms)
 [![GitHub issues](https://img.shields.io/github/issues/hunterhug/fafacms.svg)](https://github.com/hunterhug/fafacms/issues)
 
-[English Here](/README_EN.md)
+终极目标：实现一个可用的内容社区产品，围绕内容进行互动，知己交流。[English Here](/README_EN.md)
 
 💐 [APP/WEB](https://github.com/hunterhug/fafafront) 💐
 

@@ -125,11 +125,11 @@ var (
 		"/comment/admin/list":          {"List the Comment Admin", controllers.ListComment, GP, true},                               // 管理员列出评论
 		"/comment/admin/update/status": {"Update the Comment Status Admin", controllers.UpdateComment, GP, true},                    // 管理员评论违禁处理
 
-		"/relation/follow/add":     {"Update the Comment Status Admin", controllers.RelationAdd, GP, false},  // 关注
-		"/relation/follow/remove":  {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 关注解除
-		"/relation/followed/list":  {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 查看谁关注了你
-		"/relation/following/list": {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 查看你关注了谁
-		"/relation/admin/list":     {"Update the Comment Status Admin", controllers.UpdateComment, GP, true}, // 查看所有关系
+		"/relation/follow/add":     {"Follow add Who", controllers.AddRelation, GP, false},          // 关注
+		"/relation/follow/minute":  {"Follow Minute Who", controllers.MinuteRelation, GP, false},       // 关注解除
+		"/relation/followed/list":  {"List Who Follow You", controllers.ListFollowedRelation, GP, true},  // 查看谁关注了你
+		"/relation/following/list": {"List You Follow Who", controllers.ListFollowingRelation, GP, true}, // 查看你关注了谁
+		"/relation/admin/list":     {"List Who Follow Who", controllers.ListAllRelation, GP, true},       // 查看所有关系
 	}
 )
 

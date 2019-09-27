@@ -13,6 +13,7 @@ mkdir -p /data/mydocker/fafacms/storage
 mkdir -p /data/mydocker/fafacms/storage_x
 mkdir -p /data/mydocker/fafacms/log
 cp my.cnf /data/mydocker/mysql/conf/my.cnf
+chmod 644 /data/mydocker/mysql/conf/my.cnf
 cp redis.conf /data/mydocker/redis/conf/redis.conf
 cp config.json /data/mydocker/fafacms/config.json
 docker-compose stop

@@ -224,7 +224,8 @@ func ListAllMessage(c *gin.Context) {
 }
 
 type MessageRequest struct {
-	Id int64 `json:"id"`
+	Id  int64 `json:"id"`
+	All bool  `json:"all"`
 }
 
 func ReadMessage(c *gin.Context) {
@@ -239,7 +240,7 @@ func ReadMessage(c *gin.Context) {
 		return
 	}
 
-	if req.Id == 0 {
+	if req.Id == 0 && !req.All {
 		flog.Log.Errorf("ReadMessage err: %s", "message_id empty")
 		resp.Error = Error(ParasError, "message_id empty")
 		return
@@ -256,7 +257,7 @@ func ReadMessage(c *gin.Context) {
 	m.Id = req.Id
 	m.ReceiveUserId = uu.Id
 	m.ReceiveStatus = 1
-	err = m.Update()
+	err = m.Update(req.All)
 	if err != nil {
 		flog.Log.Errorf("ReadMessage err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -278,7 +279,7 @@ func DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	if req.Id == 0 {
+	if req.Id == 0 && !req.All {
 		flog.Log.Errorf("DeleteMessage err: %s", "message_id empty")
 		resp.Error = Error(ParasError, "message_id empty")
 		return
@@ -294,7 +295,7 @@ func DeleteMessage(c *gin.Context) {
 	m.Id = req.Id
 	m.ReceiveUserId = uu.Id
 	m.ReceiveStatus = 2
-	err = m.Update()
+	err = m.Update(req.All)
 	if err != nil {
 		flog.Log.Errorf("DeleteMessage err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())

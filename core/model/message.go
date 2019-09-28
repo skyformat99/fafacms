@@ -183,12 +183,15 @@ func Private(sendUserId, receiveUserId int64, sendMessage string) error {
 	return m.Insert()
 }
 
-func (m *Message) Update() error {
+func (m *Message) Update(all bool) error {
 	if m.Id == 0 || m.ReceiveUserId == 0 {
 		return errors.New("where is empty")
 	}
 
-	sess := FaFaRdb.Client.Where("id=?", m.Id).And("receive_user_id=?", m.ReceiveUserId).And("receive_status!=?", 2).And("receive_status!=?", m.ReceiveStatus).Cols("receive_status")
+	sess := FaFaRdb.Client.Where("receive_user_id=?", m.ReceiveUserId).And("receive_status!=?", 2).And("receive_status!=?", m.ReceiveStatus).Cols("receive_status")
+	if !all {
+		sess.And("id=?", m.Id)
+	}
 	if m.ReceiveStatus == 1 {
 		m.ReadTime = time.Now().Unix()
 		sess.Cols("read_time")

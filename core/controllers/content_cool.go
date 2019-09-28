@@ -77,13 +77,20 @@ func CoolContent(c *gin.Context) {
 
 	if ok {
 		err = cool.Delete()
+		if err != nil {
+			flog.Log.Errorf("CoolContent err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
 	} else {
 		err = cool.Create()
-	}
-
-	if err != nil {
-		flog.Log.Errorf("CoolContent err: %s", err.Error())
-		resp.Error = Error(DBError, err.Error())
+		if err != nil {
+			flog.Log.Errorf("CoolContent err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		} else {
+			go model.GoodContent(uu.Id, content.UserId, content.Id, content.Title)
+		}
 	}
 
 	resp.Flag = true
@@ -172,7 +179,8 @@ func BadContent(c *gin.Context) {
 
 	cc := new(model.Content)
 	cc.Id = req.ContentId
-
+	cc.UserId = content.UserId
+	cc.Title = content.Title
 	resp.Flag = true
 	if ok {
 		resp.Data = "-"

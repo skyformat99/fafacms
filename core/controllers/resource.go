@@ -99,6 +99,7 @@ func ListResource(c *gin.Context) {
 	// result
 	respResult.Resources = r
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

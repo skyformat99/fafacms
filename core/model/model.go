@@ -54,5 +54,7 @@ func CreateTable(tables []interface{}) {
 	u.NickName = "admin"
 	u.Password = "admin"
 	u.Status = 1
+	u.Vip = 1
+	u.ShortDescribe = "super man"
 	u.InsertOne()
 }

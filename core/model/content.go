@@ -22,7 +22,7 @@ type Content struct {
 	PreDescribe      string `json:"pre_describe" xorm:"TEXT"`
 	PreFlush         int    `json:"pre_flush" xorm:"not null comment('1 flush') TINYINT(1)"`
 	CloseComment     int    `json:"close_comment" xorm:"not null comment('0 open, 1 close') TINYINT(1)"`
-	Version          int    `json:"version"`
+	Version          int    `json:"version" xorm:"notnull"`
 	CreateTime       int64  `json:"create_time"`
 	UpdateTime       int64  `json:"update_time,omitempty"`
 	BanTime          int64  `json:"ban_time,omitempty"`
@@ -31,10 +31,10 @@ type Content struct {
 	ImagePath        string `json:"image_path" xorm:"varchar(700)"`
 	Views            int64  `json:"views"`
 	Password         string `json:"password,omitempty"`
-	SortNum          int64  `json:"sort_num"`
-	Bad              int64  `json:"bad"`
-	Cool             int64  `json:"cool"`
-	CommentNum       int64  `json:"comment_num"`
+	SortNum          int64  `json:"sort_num" xorm:"notnull"`
+	Bad              int64  `json:"bad" xorm:"notnull"`
+	Cool             int64  `json:"cool" xorm:"notnull"`
+	CommentNum       int64  `json:"comment_num" xorm:"notnull"`
 }
 
 var ContentSortName = []string{"=id", "-user_id", "-top", "+sort_num", "-first_publish_time", "-publish_time", "-create_time", "-update_time", "-views", "=comment_num", "=bad", "=cool", "=version", "+status", "=seo"}
@@ -177,7 +177,14 @@ func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
 
 	if c.Status == 2 {
 		c.BanTime = time.Now().Unix()
-		return FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+		num, err := FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("user_id=?", c.UserId).And("status!=?",2).Update(c)
+		if err != nil {
+			return 0, err
+		}
+
+		if num > 0 {
+			go BanContent(c.UserId, c.Id, c.Title)
+		}
 	}
 
 	if isBanChange {
@@ -196,7 +203,7 @@ func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
 
 		c.BanTime = 0
 		c.Bad = 0
-		_, err = se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
+		num, err := se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).And("status=?", 2).And("user_id=?", c.UserId).Update(c)
 		if err != nil {
 			se.Rollback()
 			return 0, err
@@ -206,6 +213,10 @@ func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
 		if err != nil {
 			se.Rollback()
 			return 0, err
+		}
+
+		if num > 0 {
+			go RecoverContent(c.UserId, c.Id, c.Title)
 		}
 		return 0, nil
 	}
@@ -683,6 +694,10 @@ func (c *Content) Ban(num int64) (err error) {
 
 	c.BanTime = time.Now().Unix()
 	c.Status = 2
-	_, err = FaFaRdb.Client.Where("id=?", c.Id).And("status!=?", 2).And("bad>?", num).Cols("ban_time", "status").Update(c)
+	num, err = FaFaRdb.Client.Where("id=?", c.Id).And("status!=?", 2).And("bad>?", num).Cols("ban_time", "status").Update(c)
+
+	if num > 0 {
+		go BanContent(c.UserId, c.Id, c.Title)
+	}
 	return
 }

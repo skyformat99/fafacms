@@ -437,6 +437,7 @@ func ListRelation(c *gin.Context, userAId int64, userBId int64, me int64) {
 	respResult.Relations = cs
 	respResult.Users = users
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

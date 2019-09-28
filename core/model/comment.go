@@ -107,10 +107,10 @@ type CommentHelper struct {
 }
 
 // get comments from id, if all false, some will not show, and user info related will also show
-func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments map[int64]CommentHelper, users map[int64]UserHelper, err error) {
+func GetCommentAndCommentUser(ids []int64, all bool, extraUserId []int64, yourUserId int64) (comments map[int64]CommentHelper, users map[int64]UserHelper, err error) {
 	comments = make(map[int64]CommentHelper)
 	users = make(map[int64]UserHelper)
-	if len(ids) == 0 {
+	if len(ids) == 0 && len(extraUserId) == 0 {
 		return
 	}
 	cms := make([]Comment, 0)
@@ -184,12 +184,39 @@ func GetCommentAndCommentUser(ids []int64, all bool, yourUserId int64) (comments
 		}
 	}
 
+	if extraUserId != nil {
+		for _, v := range extraUserId {
+			userHelper[v] = struct{}{}
+		}
+	}
+
 	userIds := make([]int64, 0)
 	for k := range userHelper {
 		userIds = append(userIds, k)
 	}
 
 	users, err = GetUser(userIds)
+	return
+}
+
+func GetComment(ids []int64, isAdmin bool) (comments map[int64]Comment, err error) {
+	comments = make(map[int64]Comment)
+	cs := make([]Comment, 0)
+	if len(ids) == 0 {
+		return
+	}
+	sess := FaFaRdb.Client.In("id", ids)
+
+	if !isAdmin {
+		sess.Where("is_delete=?", 0)
+	}
+
+	err = sess.Find(&cs)
+	if err == nil {
+		for _, v := range cs {
+			comments[v.Id] = v
+		}
+	}
 	return
 }
 
@@ -237,8 +264,8 @@ type Comment struct {
 	CreateTime          int64  `json:"-"`
 	Status              int    `json:"-" xorm:"not null comment('0 normal, 1 ban') TINYINT(1) index"`
 	BanTime             int64  `json:"-"`
-	Cool                int64  `json:"-"`
-	Bad                 int64  `json:"-"`
+	Cool                int64  `json:"-" xorm:"notnull"`
+	Bad                 int64  `json:"-" xorm:"notnull"`
 	CommentType         int    `json:"comment_type"` // 0 comment to content, 1 comment to comment, 2 comment to comment more
 	CommentAnonymous    int    `json:"-"`
 	IsDelete            int    `json:"-"`
@@ -324,7 +351,14 @@ func (c *Comment) UpdateStatus() (int64, error) {
 
 	if c.Status == 1 {
 		c.BanTime = time.Now().Unix()
-		return FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).Update(c)
+		num, err := FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("status!=?", 1).Update(c)
+		if err != nil {
+			return 0, err
+		}
+
+		if num > 0 {
+			go BanComment(c.UserId, c.ContentId, c.ContentTitle, c.Id, c.Describe)
+		}
 	}
 
 	se := FaFaRdb.Client.NewSession()
@@ -342,7 +376,7 @@ func (c *Comment) UpdateStatus() (int64, error) {
 
 	c.BanTime = 0
 	c.Bad = 0
-	_, err = se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).Update(c)
+	num, err := se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).And("status=?", 1).Update(c)
 	if err != nil {
 		se.Rollback()
 		return 0, err
@@ -352,6 +386,10 @@ func (c *Comment) UpdateStatus() (int64, error) {
 	if err != nil {
 		se.Rollback()
 		return 0, err
+	}
+
+	if num > 0 {
+		go RecoverComment(c.UserId, c.ContentId, c.ContentTitle, c.Id, c.Describe)
 	}
 	return 0, nil
 }
@@ -606,6 +644,10 @@ func (c *Comment) Ban(num int64) (err error) {
 
 	c.BanTime = time.Now().Unix()
 	c.Status = 1
-	_, err = FaFaRdb.Client.Where("id=?", c.Id).And("status!=?", 1).And("bad>?", num).Cols("ban_time", "status").Update(c)
+	num, err = FaFaRdb.Client.Where("id=?", c.Id).And("status!=?", 1).And("bad>?", num).Cols("ban_time", "status").Update(c)
+
+	if num > 0 {
+		go BanComment(c.UserId, c.ContentId, c.ContentTitle, c.CommentId, c.Describe)
+	}
 	return
 }

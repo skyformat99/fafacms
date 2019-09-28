@@ -424,6 +424,7 @@ func ListFileAdminHelper(c *gin.Context, userId int64) {
 	// result
 	respResult.Files = files
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

@@ -132,6 +132,12 @@ var (
 		"/relation/followed/list":  {"List Who Follow You", controllers.ListFollowedRelation, GP, false},      // 查看谁关注了用户B，然后你和谁的关系
 		"/relation/following/list": {"List You Follow Who", controllers.ListFollowingRelation, GP, false},     // 查看用户A关注了谁，然后你和谁的关系
 		"/relation/admin/list":     {"List Who Follow Who Admin", controllers.ListAllRelation, GP, true},      // 查看所有关系
+
+		"/message/list":       {"List Your Message", controllers.ListMessage, GP, false},           // 列出自己的系统消息
+		"/message/admin/list": {"List All Message", controllers.ListAllMessage, GP, false},         // 管理员列出所有系统消息
+		"/message/read":       {"Read Your Message", controllers.ReadMessage, GP, false},           // 读取系统消息
+		"/message/delete":     {"Delete Your Message", controllers.DeleteMessage, GP, false},       // 删除系统消息
+		"/message/private":    {"Send Message Private", controllers.SendPrivateMessage, GP, false}, // 私信
 	}
 )
 

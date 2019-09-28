@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	"github.com/hunterhug/fafacms/core/flog"
 	"github.com/hunterhug/fafacms/core/model"
 	"github.com/hunterhug/fafacms/core/util"
 	"math"
 	"strings"
-	"github.com/go-playground/validator"
 )
 
 // comment escape
@@ -104,6 +104,8 @@ func CreateComment(c *gin.Context) {
 				resp.Error = Error(DBError, err.Error())
 				return
 			}
+
+			go model.CommentForContent(uu.Id, content.UserId, content.Id, content.Title, cm.Id, cm.Describe, req.Anonymous)
 			resp.Data = cm.Id
 		} else {
 			flog.Log.Errorf("CreateComment err: %s", "content status not 0 or not publish")
@@ -205,6 +207,12 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
+	if targetComment.CommentType == model.CommentTypeOfContent {
+		go model.CommentForComment(uu.Id, newComment.RootCommentUserId, content.Id, content.Title, newComment.Id, newComment.Describe, req.Anonymous)
+	} else {
+		go model.CommentForComment(uu.Id, newComment.CommentUserId, content.Id, content.Title, newComment.Id, newComment.Describe, req.Anonymous)
+	}
+	go model.CommentForComment(uu.Id, content.UserId, content.Id, content.Title, newComment.Id, newComment.Describe, req.Anonymous)
 	resp.Data = newComment.Id
 	resp.Flag = true
 }
@@ -325,7 +333,7 @@ func TakeComment(c *gin.Context) {
 		return
 	}
 
-	backComments, backUsers, err := model.GetCommentAndCommentUser(commentIds, false, uu.Id)
+	backComments, backUsers, err := model.GetCommentAndCommentUser(commentIds, false, nil, uu.Id)
 	if err != nil {
 		flog.Log.Errorf("TakeComment err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -523,7 +531,7 @@ func ListComment(c *gin.Context) {
 		return
 	}
 
-	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), true, 0)
+	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), true, nil, 0)
 	if err != nil {
 		flog.Log.Errorf("ListComment err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -538,6 +546,7 @@ func ListComment(c *gin.Context) {
 		Contents: backContents,
 	}
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true
@@ -641,7 +650,7 @@ func ListHomeComment(c *gin.Context) {
 		}
 	}
 
-	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), false, yourUserId)
+	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), false, nil, yourUserId)
 	if err != nil {
 		flog.Log.Errorf("ListHomeComment err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -656,6 +665,7 @@ func ListHomeComment(c *gin.Context) {
 		Contents: backContents,
 	}
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true
@@ -725,13 +735,20 @@ func CoolComment(c *gin.Context) {
 
 	if ok {
 		err = cool.Delete()
+		if err != nil {
+			flog.Log.Errorf("CoolContent err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
 	} else {
 		err = cool.Create()
-	}
-
-	if err != nil {
-		flog.Log.Errorf("CoolContent err: %s", err.Error())
-		resp.Error = Error(DBError, err.Error())
+		if err != nil {
+			flog.Log.Errorf("CoolContent err: %s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		} else {
+			go model.GoodComment(uu.Id, comment.UserId, comment.ContentId, comment.ContentTitle, comment.Id, comment.Describe)
+		}
 	}
 
 	resp.Flag = true
@@ -817,6 +834,10 @@ func BadComment(c *gin.Context) {
 
 	cc := new(model.Comment)
 	cc.Id = req.CommentId
+	cc.UserId = comment.UserId
+	cc.Describe = comment.Describe
+	cc.ContentId = comment.ContentId
+	cc.ContentTitle = comment.ContentTitle
 
 	resp.Flag = true
 	if ok {

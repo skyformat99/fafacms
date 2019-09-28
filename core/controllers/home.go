@@ -175,6 +175,7 @@ func Peoples(c *gin.Context) {
 	}
 	respResult.Users = peoples
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true
@@ -774,6 +775,7 @@ func Contents(c *gin.Context) {
 
 	respResult.Contents = bcs
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

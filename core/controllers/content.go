@@ -342,6 +342,7 @@ func UpdateStatusOfContentAdmin(c *gin.Context) {
 	if req.Status != contentBefore.Status {
 		content.Status = req.Status
 		content.UserId = contentBefore.UserId
+		content.Title = contentBefore.Title
 		_, err = content.UpdateStatus(contentBefore.Status == 2)
 		if err != nil {
 			flog.Log.Errorf("UpdateStatusOfContentAdmin err:%s", err.Error())
@@ -1012,6 +1013,12 @@ func PublishContent(c *gin.Context) {
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
+
+	if content.Version == 1 {
+		go model.PublishContent(uu.Id, 0, content.Id, content.Title, false)
+	} else {
+		go model.PublishContent(uu.Id, 0, content.Id, content.Title, true)
+	}
 	resp.Flag = true
 }
 
@@ -1298,6 +1305,7 @@ func ListContentHelper(c *gin.Context, userId int64) {
 	// result
 	respResult.Contents = cs
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true
@@ -1421,6 +1429,7 @@ func ListContentHistoryHelper(c *gin.Context, userId int64) {
 	// result
 	respResult.Contents = cs
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

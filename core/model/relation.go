@@ -70,6 +70,8 @@ func (r *Relation) Add() (err error) {
 		se.Rollback()
 		return
 	}
+
+	go FollowYou(r.UserAId, r.UserBId)
 	return
 }
 

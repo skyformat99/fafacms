@@ -180,6 +180,7 @@ func Error(code int, detail string) *ErrorResp {
 // list api page helper
 type PageHelp struct {
 	Limit int `json:"limit"`
+	Total int `json:"total"`
 	Page  int `json:"page"`
 	Pages int `json:"total_pages"` // set by yourself outside
 }

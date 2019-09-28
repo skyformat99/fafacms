@@ -18,7 +18,7 @@ type ContentNode struct {
 	ImagePath    string `json:"image_path" xorm:"varchar(700)"`
 	ParentNodeId int64  `json:"parent_node_id" xorm:"bigint index"`
 	Level        int    `json:"level"`
-	SortNum      int64  `json:"sort_num"`
+	SortNum      int64  `json:"sort_num" xorm:"notnull"`
 }
 
 var ContentNodeSortName = []string{"=id", "+sort_num", "-create_time", "-update_time", "+status", "=seo"}

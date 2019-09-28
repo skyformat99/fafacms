@@ -39,27 +39,39 @@ const (
 
 // Message inside
 type Message struct {
-	Id               int64  `json:"id" xorm:"bigint pk autoincr"`
-	SendUserId       int64  `json:"send_user_id,omitempty" xorm:"bigint index"`
-	SendMessage      string `json:"send_message,omitempty"`
-	ReceiveUserId    int64  `json:"receive_user_id" xorm:"bigint index"`
-	CreateTime       int64  `json:"create_time"`
-	ReadTime         int64  `json:"read_time"`
-	DeleteTime       int64  `json:"delete_time,omitempty"`
-	SendStatus       int    `json:"-" xorm:"not null comment('0 waiting,1 read,2 delete') TINYINT(1) index"`
-	ReceiveStatus    int    `json:"receive_status" xorm:"not null comment('0 waiting,1 read,2 delete') TINYINT(1) index"`
-	UserId           int64  `json:"user_id" xorm:"bigint index"`
-	ContentId        int64  `json:"content_id" xorm:"bigint index"`
-	ContentTitle     string `json:"content_title"`
-	CommentId        int64  `json:"comment_id" xorm:"bigint index"`
-	CommentDescribe  string `json:"comment_describe"`
-	CommentAnonymous int    `json:"comment_anonymous"`
-	PublishAgain     int    `json:"publish_again"`
-	MessageType      int    `json:"message_type" xorm:"index"`
-	IsYourSelf       int    `json:"is_your_self"`
+	Id                int64  `json:"id" xorm:"bigint pk autoincr"`
+	PrivateChanel     string `json:"private_chanel,omitempty" xorm:"index"`                                             // private message
+	SendUserId        int64  `json:"send_user_id,omitempty" xorm:"bigint index"`                                        // private message
+	SendMessage       string `json:"send_message,omitempty"`                                                            // private message
+	SendDeleteTime    int64  `json:"send_delete_time,omitempty"`                                                        // private message
+	SendStatus        int    `json:"send_status" xorm:"not null comment('0 waiting,1 read,2 delete') TINYINT(1) index"` // private message
+	ReceiveUserId     int64  `json:"receive_user_id" xorm:"bigint index"`
+	ReceiveStatus     int    `json:"receive_status" xorm:"not null comment('0 waiting,1 read,2 delete') TINYINT(1) index"`
+	CreateTime        int64  `json:"create_time"`
+	ReadTime          int64  `json:"read_time"`
+	DeleteTime        int64  `json:"delete_time,omitempty"`
+	UserId            int64  `json:"user_id" xorm:"bigint index"`
+	ContentId         int64  `json:"content_id" xorm:"bigint index"`
+	ContentTitle      string `json:"content_title"`
+	CommentId         int64  `json:"comment_id" xorm:"bigint index"`
+	CommentDescribe   string `json:"comment_describe"`
+	CommentAnonymous  int    `json:"comment_anonymous"`
+	PublishAgain      int    `json:"publish_again"`
+	MessageType       int    `json:"message_type" xorm:"index"`
+	CommentIsYourSelf int    `json:"comment_is_your_self"`
+	GlobalMessageId   int64  `json:"global_message_id"`
 }
 
-var MessageSortName = []string{"=id", "-create_time", "=receive_status", "=message_type", "=send_user_id", "=receive_user_id"}
+type GlobalMessage struct {
+	Id          int64  `json:"id" xorm:"bigint pk autoincr"`
+	CreateTime  int64  `json:"create_time"`
+	SendMessage string `json:"send_message"`
+	Status      int    `json:"status" xorm:"not null comment('0 waiting,1 normal,2 delete') TINYINT(1) index"`
+	Total       int64  `json:"total"`
+	Success     int64  `json:"success"`
+}
+
+var MessageSortName = []string{"=id", "-create_time", "=receive_status", "=send_status", "=message_type", "=send_user_id", "=receive_user_id"}
 
 func CommentAbout(userId int64, receiveUserId int64, contentId int64, contentTitle string, commentId int64, commentDescribe string, messageType int, commentAnonymous bool) error {
 	m := new(Message)
@@ -89,8 +101,14 @@ func ContentAbout(userId int64, receiveUserId int64, contentId int64, contentTit
 func (m *Message) Insert() error {
 	m.CreateTime = time.Now().Unix()
 	if m.UserId == m.ReceiveUserId {
-		m.IsYourSelf = 1
+		m.CommentIsYourSelf = 1
 	}
+	_, err := FaFaRdb.Client.InsertOne(m)
+	return err
+}
+
+func (m *GlobalMessage) Insert() error {
+	m.CreateTime = time.Now().Unix()
 	_, err := FaFaRdb.Client.InsertOne(m)
 	return err
 }
@@ -183,24 +201,23 @@ func Private(sendUserId, receiveUserId int64, sendMessage string) error {
 	return m.Insert()
 }
 
-func (m *Message) Update(all bool) error {
-	if m.Id == 0 || m.ReceiveUserId == 0 {
+func (m *Message) Update(ids []int64) error {
+	if len(ids) == 0 || m.ReceiveUserId == 0 {
 		return errors.New("where is empty")
 	}
 
 	sess := FaFaRdb.Client.Where("receive_user_id=?", m.ReceiveUserId).And("receive_status!=?", 2).And("receive_status!=?", m.ReceiveStatus).Cols("receive_status")
-	if !all {
-		sess.And("id=?", m.Id)
-	}
+	sess.In("id", ids)
 	if m.ReceiveStatus == 1 {
 		m.ReadTime = time.Now().Unix()
-		sess.Cols("read_time")
+		m.SendStatus = 1
+		sess.Cols("read_time", "send_status")
 	} else if m.ReceiveStatus == 2 {
 		m.DeleteTime = time.Now().Unix()
 		sess.Cols("delete_time")
 	}
 
-	_, err := sess.Update(m)
+	_, err := sess.Update(new(Message))
 	return err
 }
 
@@ -224,5 +241,35 @@ func GroupCount(userId int64) (countMap map[string]int, err error) {
 		}
 		countMap[v["message_type"]] = i
 	}
+	return
+}
+
+func InsertGlobalMessageToUser(userId int64) (err error) {
+	gms := make([]GlobalMessage, 0)
+	err = FaFaRdb.Client.Where("create_time>?", time.Now().Unix()-7*24*3600).And("status=?", 1).Find(&gms)
+	for _, gm := range gms {
+		m := new(Message)
+		m.MessageType = MessageTypeGlobal
+		m.ReceiveUserId = userId
+		m.GlobalMessageId = gm.Id
+		num, err := FaFaRdb.Client.Count(m)
+		if err != nil {
+			return err
+		}
+
+		if num == 0 {
+			m.SendMessage = gm.SendMessage
+			err = m.Insert()
+			if err != nil {
+				return err
+			}
+
+			_, err = FaFaRdb.Client.Where("id=?", gm.Id).Incr("success").Update(new(GlobalMessage))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return
 }

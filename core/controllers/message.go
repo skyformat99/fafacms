@@ -11,7 +11,7 @@ import (
 
 type ListMessageRequest struct {
 	MessageId       int64    `json:"message_id"`
-	MessageType     int      `json:"message_type" validate:"oneof=-1 0 1 2 3 4 5 6 7 8 9"`
+	MessageType     int      `json:"message_type" validate:"oneof=-1 0 1 2 3 4 5 6 7 8 9 10 11"`
 	UserId          int64    `json:"user_id"`
 	ReceiveStatus   int      `json:"receive_status" validate:"oneof=-1 0 1 2"`
 	CreateTimeBegin int64    `json:"create_time_begin"`
@@ -65,6 +65,9 @@ func ListMessageHelper(c *gin.Context, isAdmin bool) {
 
 		yourUserId = uu.Id
 		all = false
+
+		// global message insert
+		go model.InsertGlobalMessageToUser(yourUserId)
 	}
 
 	// new query list session
@@ -153,7 +156,7 @@ func ListMessageHelper(c *gin.Context, isAdmin bool) {
 		switch v.MessageType {
 		case model.MessageTypeCommentForContent, model.MessageTypeCommentForComment:
 			// if comment is anonymous must hide user id
-			if v.CommentAnonymous == 1 && v.IsYourSelf == 0 {
+			if v.CommentAnonymous == 1 && v.CommentIsYourSelf == 0 {
 				if !all {
 					v.UserId = 0
 				}
@@ -223,14 +226,13 @@ func ListAllMessage(c *gin.Context) {
 	ListMessageHelper(c, true)
 }
 
-type MessageRequest struct {
-	Id  int64 `json:"id"`
-	All bool  `json:"all"`
+type ReadMessageRequest struct {
+	Ids []int64 `json:"ids"`
 }
 
 func ReadMessage(c *gin.Context) {
 	resp := new(Resp)
-	req := new(MessageRequest)
+	req := new(ReadMessageRequest)
 	defer func() {
 		JSONL(c, 200, req, resp)
 	}()
@@ -240,9 +242,9 @@ func ReadMessage(c *gin.Context) {
 		return
 	}
 
-	if req.Id == 0 && !req.All {
-		flog.Log.Errorf("ReadMessage err: %s", "message_id empty")
-		resp.Error = Error(ParasError, "message_id empty")
+	if len(req.Ids) == 0 {
+		flog.Log.Errorf("ReadMessage err: %s", "ids empty")
+		resp.Error = Error(ParasError, "ids empty")
 		return
 	}
 
@@ -254,10 +256,9 @@ func ReadMessage(c *gin.Context) {
 	}
 
 	m := new(model.Message)
-	m.Id = req.Id
 	m.ReceiveUserId = uu.Id
 	m.ReceiveStatus = 1
-	err = m.Update(req.All)
+	err = m.Update(req.Ids)
 	if err != nil {
 		flog.Log.Errorf("ReadMessage err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -267,9 +268,13 @@ func ReadMessage(c *gin.Context) {
 	resp.Flag = true
 }
 
+type DeleteMessageRequest struct {
+	Ids []int64 `json:"ids"`
+}
+
 func DeleteMessage(c *gin.Context) {
 	resp := new(Resp)
-	req := new(MessageRequest)
+	req := new(DeleteMessageRequest)
 	defer func() {
 		JSONL(c, 200, req, resp)
 	}()
@@ -279,9 +284,9 @@ func DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	if req.Id == 0 && !req.All {
-		flog.Log.Errorf("DeleteMessage err: %s", "message_id empty")
-		resp.Error = Error(ParasError, "message_id empty")
+	if len(req.Ids) == 0 {
+		flog.Log.Errorf("DeleteMessage err: %s", "ids empty")
+		resp.Error = Error(ParasError, "ids empty")
 		return
 	}
 	uu, err := GetUserSession(c)
@@ -292,12 +297,91 @@ func DeleteMessage(c *gin.Context) {
 	}
 
 	m := new(model.Message)
-	m.Id = req.Id
 	m.ReceiveUserId = uu.Id
 	m.ReceiveStatus = 2
-	err = m.Update(req.All)
+	err = m.Update(req.Ids)
 	if err != nil {
 		flog.Log.Errorf("DeleteMessage err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	resp.Flag = true
+}
+
+type CreateGlobalMessageRequest struct {
+	UserIds   []int64 `json:"user_ids"`
+	AllPeople bool    `json:"all_people"`
+	Message   string  `json:"message"`
+	RightNow  bool    `json:"right_now"` // valid in all_people true
+}
+
+func CreateGlobalMessage(c *gin.Context) {
+	resp := new(Resp)
+	req := new(CreateGlobalMessageRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if !req.AllPeople {
+		// alone sent to all user_ids, should not empty
+		if len(req.UserIds) == 0 {
+			flog.Log.Errorf("CreateGlobalMessage err: %s", "user_ids empty")
+			resp.Error = Error(ParasError, "user_ids empty")
+			return
+		}
+
+		// user should all exit
+		if !model.UserAllExist(req.UserIds) {
+			flog.Log.Errorf("CreateGlobalMessage err: %s", "user_ids not right")
+			resp.Error = Error(ParasError, "user_ids not right")
+			return
+		}
+
+	}
+
+	if !req.AllPeople {
+		for _, v := range req.UserIds {
+			m := new(model.Message)
+			m.MessageType = model.MessageTypeGlobal
+			m.SendMessage = req.Message
+			m.ReceiveUserId = v
+			err := m.Insert()
+			if err != nil {
+				flog.Log.Errorf("CreateGlobalMessage err: %s", err.Error())
+				resp.Error = Error(DBError, err.Error())
+				return
+			}
+		}
+
+		resp.Flag = true
+		return
+	}
+
+	// insert global table
+	gm := new(model.GlobalMessage)
+	gm.SendMessage = req.Message
+
+	// how much user now
+	uCount, err := model.UserCount()
+	if err != nil {
+		flog.Log.Errorf("CreateGlobalMessage err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+	gm.Total = uCount
+	if req.RightNow {
+		gm.Status = 1
+	}
+
+	err = gm.Insert()
+	if err != nil {
+		flog.Log.Errorf("CreateGlobalMessage err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
@@ -311,6 +395,13 @@ type SendPrivateMessageRequest struct {
 }
 
 // todo
+func ListGlobalMessage(c *gin.Context){
+
+}
+
+func UpdateGlobalMessage(c *gin.Context){
+
+}
 func SendPrivateMessage(c *gin.Context) {
 	resp := new(Resp)
 	req := new(SendPrivateMessageRequest)

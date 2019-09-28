@@ -184,6 +184,7 @@ func main() {
 			model.CommentBad{},     // Like the Content Bad
 			model.Relation{},       // Who follow who
 			model.Message{},        // Message inside
+			model.GlobalMessage{},  // Global Message helper
 			//model.Log{},            // Log Table, not use
 		})
 	}

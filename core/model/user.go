@@ -220,3 +220,12 @@ func (u *User) UpdateLoginInfo() error {
 	_, err := FaFaRdb.Client.Where("id=?", u.Id).Cols("login_time", "login_ip").Update(u)
 	return err
 }
+
+func UserAllExist(userIds []int64) bool {
+	num, _ := FaFaRdb.Client.Where("status!=?", 0).In("id", userIds).Count(new(User))
+	return len(userIds) == int(num)
+}
+
+func UserCount() (int64, error) {
+	return FaFaRdb.Client.Where("status!=?", 0).Count(new(User))
+}

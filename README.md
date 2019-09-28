@@ -29,7 +29,7 @@
 10. 私信，用户间私聊。
 11. 用户和内容关键字搜索。
 
-需求时刻迭代，最新更新参见[产品更新记录](/log.md)，待处理事宜参见[待做清单](/todo.md)。详细设计，约束请参考实际[API文档](https://github.com/hunterhug/fafadoc)。
+需求时刻迭代，最新更新参见[产品更新记录](/log.md)，待处理事宜参见[清单](/todo.md)。详细设计，约束请参考实际[API文档](https://github.com/hunterhug/fafadoc)。
 。
 
 ## 写给前端人员

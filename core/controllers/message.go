@@ -14,6 +14,7 @@ type ListMessageRequest struct {
 	MessageType     int      `json:"message_type" validate:"oneof=-1 0 1 2 3 4 5 6 7 8 9 10 11"`
 	UserId          int64    `json:"user_id"`
 	ReceiveStatus   int      `json:"receive_status" validate:"oneof=-1 0 1 2"`
+	GlobalMessageId int64    `json:"global_message_id"`
 	CreateTimeBegin int64    `json:"create_time_begin"`
 	CreateTimeEnd   int64    `json:"create_time_end"`
 	Sort            []string `json:"sort"`
@@ -105,6 +106,10 @@ func ListMessageHelper(c *gin.Context, isAdmin bool) {
 	if all {
 		if req.UserId != 0 {
 			session.And("receive_user_id=?", req.UserId)
+		}
+
+		if req.GlobalMessageId != 0 {
+			session.And("global_message_id=?", req.GlobalMessageId)
 		}
 	}
 
@@ -389,19 +394,162 @@ func CreateGlobalMessage(c *gin.Context) {
 	resp.Flag = true
 }
 
+type ListGlobalMessageRequest struct {
+	Id              int64    `json:"id"`
+	CreateTimeBegin int64    `json:"create_time_begin"`
+	CreateTimeEnd   int64    `json:"create_time_end"`
+	Status          int      `json:"status" validate:"oneof=-1 0 1 2"`
+	Sort            []string `json:"sort"`
+	PageHelp
+}
+
+type ListGlobalMessageResponse struct {
+	Message []model.GlobalMessage `json:"message"`
+	PageHelp
+}
+
+func ListGlobalMessage(c *gin.Context) {
+	resp := new(Resp)
+	respResult := new(ListGlobalMessageResponse)
+
+	req := new(ListGlobalMessageRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	var validate = validator.New()
+	err := validate.Struct(req)
+	if err != nil {
+		flog.Log.Errorf("ListGlobalMessage err: %s", err.Error())
+		resp.Error = Error(ParasError, err.Error())
+		return
+	}
+
+	// new query list session
+	session := model.FaFaRdb.Client.NewSession()
+	defer session.Close()
+
+	// group list where prepare
+	session.Table(new(model.GlobalMessage)).Where("1=1")
+
+	// query prepare
+	if req.Id != 0 {
+		session.And("id=?", req.Id)
+	}
+
+	if req.Status == -1 {
+		session.And("status=?", req.Status)
+	}
+
+	if req.CreateTimeBegin > 0 {
+		session.And("create_time>=?", req.CreateTimeBegin)
+	}
+
+	if req.CreateTimeEnd > 0 {
+		session.And("create_time<?", req.CreateTimeEnd)
+	}
+
+	// count num
+	countSession := session.Clone()
+	defer countSession.Close()
+	total, err := countSession.Count()
+	if err != nil {
+		flog.Log.Errorf("ListGlobalMessage err:%s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	// if count>0 start list
+	cs := make([]model.GlobalMessage, 0)
+	p := &req.PageHelp
+	if total == 0 {
+		if p.Limit == 0 {
+			p.Limit = 20
+		}
+	} else {
+		// sql build
+		p.build(session, req.Sort, model.GlobalMessageSortName)
+		// do query
+		err = session.Find(&cs)
+		if err != nil {
+			flog.Log.Errorf("ListGlobalMessage err:%s", err.Error())
+			resp.Error = Error(DBError, err.Error())
+			return
+		}
+	}
+
+	// result
+	respResult.Message = cs
+	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
+	p.Total = int(total)
+	respResult.PageHelp = *p
+	resp.Data = respResult
+	resp.Flag = true
+}
+
+type UpdateGlobalMessageRequest struct {
+	Id     int64 `json:"id" validate:"required"`
+	Status int   `json:"status" validate:"oneof=0 1 2"`
+}
+
+func UpdateGlobalMessage(c *gin.Context) {
+	resp := new(Resp)
+	req := new(UpdateGlobalMessageRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	var validate = validator.New()
+	err := validate.Struct(req)
+	if err != nil {
+		flog.Log.Errorf("UpdateGlobalMessage err: %s", err.Error())
+		resp.Error = Error(ParasError, err.Error())
+		return
+	}
+
+	n := new(model.GlobalMessage)
+	n.Id = req.Id
+
+	exist, err := n.Get()
+	if err != nil {
+		flog.Log.Errorf("UpdateGlobalMessage err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+	if !exist {
+		flog.Log.Errorf("UpdateGlobalMessage err: %s", "global message not found")
+		resp.Error = Error(GlobalMessageNotFound, "")
+		return
+	}
+
+	after := new(model.GlobalMessage)
+	after.Id = n.Id
+	after.Status = req.Status
+
+	_, err = after.Update()
+	if err != nil {
+		flog.Log.Errorf("UpdateGlobalMessage err:%s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+	resp.Flag = true
+}
+
 type SendPrivateMessageRequest struct {
 	UserId  int64  `json:"user_id"`
 	Message string `json:"message"`
 }
 
-// todo
-func ListGlobalMessage(c *gin.Context){
-
-}
-
-func UpdateGlobalMessage(c *gin.Context){
-
-}
 func SendPrivateMessage(c *gin.Context) {
 	resp := new(Resp)
 	req := new(SendPrivateMessageRequest)

@@ -553,8 +553,9 @@ func ListComment(c *gin.Context) {
 }
 
 type ListHomeCommentRequest struct {
-	ContentId int64    `json:"content_id"`
-	Sort      []string `json:"sort"`
+	ContentId     int64    `json:"content_id"`
+	RootCommentId int64    `json:"root_comment_id"`
+	Sort          []string `json:"sort"`
 	PageHelp
 }
 
@@ -593,6 +594,10 @@ func ListHomeComment(c *gin.Context) {
 
 	if req.ContentId != 0 {
 		session.And("content_id=?", req.ContentId)
+	}
+
+	if req.RootCommentId != -1 {
+		session.And("root_comment_id=?", req.RootCommentId)
 	}
 
 	backContents, err := model.GetContentHelper([]int64{req.ContentId}, false, yourUserId)

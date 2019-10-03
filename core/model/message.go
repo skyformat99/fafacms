@@ -65,13 +65,15 @@ type Message struct {
 type GlobalMessage struct {
 	Id          int64  `json:"id" xorm:"bigint pk autoincr"`
 	CreateTime  int64  `json:"create_time"`
+	UpdateTime  int64  `json:"update_time"`
 	SendMessage string `json:"send_message"`
 	Status      int    `json:"status" xorm:"not null comment('0 waiting,1 normal,2 delete') TINYINT(1) index"`
-	Total       int64  `json:"total"`
-	Success     int64  `json:"success"`
+	Total       int64  `json:"total" xorm:"not null"`
+	Success     int64  `json:"success" xorm:"not null"`
 }
 
 var MessageSortName = []string{"=id", "-create_time", "=receive_status", "=send_status", "=message_type", "=send_user_id", "=receive_user_id"}
+var GlobalMessageSortName = []string{"=id", "-create_time", "status", "=total", "=success"}
 
 func CommentAbout(userId int64, receiveUserId int64, contentId int64, contentTitle string, commentId int64, commentDescribe string, messageType int, commentAnonymous bool) error {
 	m := new(Message)
@@ -272,4 +274,21 @@ func InsertGlobalMessageToUser(userId int64) (err error) {
 	}
 
 	return
+}
+
+func (m *GlobalMessage) Get() (bool, error) {
+	if m.Id == 0 {
+		return false, errors.New("where is empty")
+	}
+
+	return FaFaRdb.Client.Get(m)
+}
+
+func (m *GlobalMessage) Update() (int64, error) {
+	if m.Id == 0 {
+		return 0, errors.New("where is empty")
+	}
+
+	m.UpdateTime = time.Now().Unix()
+	return FaFaRdb.Client.ID(m.Id).Cols("status", "update_time").Update(m)
 }

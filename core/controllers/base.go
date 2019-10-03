@@ -55,6 +55,7 @@ const (
 	CommentNotFound                     = 110008
 	CommentBanPermit                    = 110009
 	CommentClose                        = 110010
+	GlobalMessageNotFound               = 110011
 	AddUserCacheError                   = 120000
 	DeleteUserCacheError                = 120001
 	RefreshUserCacheError               = 120002
@@ -132,6 +133,7 @@ var ErrorMap = map[int]string{
 	CommentNotFound:                     "comment not found",
 	CommentBanPermit:                    "comment ban permit",
 	CommentClose:                        "content close comment",
+	GlobalMessageNotFound:               "global message not found",
 	SystemProblem:                       "system problem",
 	DbNotFound:                          "db not found",
 	DbRepeat:                            "db repeat data",

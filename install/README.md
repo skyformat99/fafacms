@@ -102,6 +102,8 @@ fafacms -config=./config.json
         Auto ban the content or comment
   -ban_time int
         Content or comment will be ban in how much bad's time (default 10)
+  -can_scale
+        Can scale the picture auto (default true)
   -config string
         Config file (default "./config.json")
   -email_debug
@@ -110,6 +112,8 @@ fafacms -config=./config.json
         Content history can be record (default true)
   -init_db
         Init create db table (default true)
+  -scale_width int
+        The width of scale size of picture (default 500)
   -session_expire_time int
         Login session expire second time, token will destroy after this time (default 604800)
   -single_login

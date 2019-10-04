@@ -32,7 +32,11 @@ var FileAllow = map[string][]string{
 		"wav", "wma", "wmv", "mid", "avi", "mpg", "asf", "rm", "rmvb",
 		"doc", "docx", "xls", "xlsx", "ppt", "htm", "html", "txt", "zip", "rar", "gz", "bz2"}}
 
-var FileBytes = 1 << 25 // (1<<25)/1000.0/1000.0 33.54 size can not beyond 33M
+var (
+	FileBytes  = 1 << 25 // (1<<25)/1000.0/1000.0 33.54 size can not beyond 33M
+	CanScale   = true
+	ScaleWidth = 500
+)
 
 type UploadResponse struct {
 	FileName       string `json:"file_name"`
@@ -160,7 +164,7 @@ func UploadFile(c *gin.Context) {
 		fileAbName := filepath.Join(fileDir, fileName)
 
 		// Local mode will save in disk
-		if config.FaFaConfig.DefaultConfig.StorageOss != true {
+		if !config.FaFaConfig.DefaultConfig.StorageOss {
 			// disk mode first make dir
 			err := myutil.MakeDir(fileDir)
 			if err != nil {
@@ -195,38 +199,40 @@ func UploadFile(c *gin.Context) {
 		if myutil.InArray(scaleType, fileSuffix) {
 			p.IsPicture = 1
 
-			// Local disk mode，cut the picture and save in  /storage_x
-			if config.FaFaConfig.DefaultConfig.StorageOss != true {
-				fileScaleDir := filepath.Join(config.FaFaConfig.DefaultConfig.StoragePath+"_x", uName, fileType)
-				fileScaleAbName := filepath.Join(fileScaleDir, fileName)
+			if CanScale {
+				// Local disk mode，cut the picture and save in  /storage_x
+				if !config.FaFaConfig.DefaultConfig.StorageOss {
+					fileScaleDir := filepath.Join(config.FaFaConfig.DefaultConfig.StoragePath+"_x", uName, fileType)
+					fileScaleAbName := filepath.Join(fileScaleDir, fileName)
 
-				// scale cut cut
-				err = myutil.MakeDir(fileScaleDir)
-				if err != nil {
-					Log.Errorf("upload err:%s", err.Error())
-					resp.Error = Error(UploadFileError, err.Error())
-					return
-				}
-				err := go_image.ScaleF2F(fileAbName, fileScaleAbName, 500)
-				if err != nil {
-					Log.Errorf("upload err:%s", err.Error())
-					resp.Error = Error(UploadFileError, err.Error())
-					return
-				}
-			} else {
-				// OSS again
-				outRaw, err := go_image.ScaleB2B(raw, 200)
-				if err != nil {
-					Log.Errorf("upload err:%s", err.Error())
-					resp.Error = Error(UploadFileError, err.Error())
-					return
-				}
+					// scale cut cut
+					err = myutil.MakeDir(fileScaleDir)
+					if err != nil {
+						Log.Errorf("upload err:%s", err.Error())
+						resp.Error = Error(UploadFileError, err.Error())
+						return
+					}
+					err := go_image.ScaleF2F(fileAbName, fileScaleAbName, ScaleWidth)
+					if err != nil {
+						Log.Errorf("upload err:%s", err.Error())
+						resp.Error = Error(UploadFileError, err.Error())
+						return
+					}
+				} else {
+					// OSS again
+					outRaw, err := go_image.ScaleB2B(raw, ScaleWidth)
+					if err != nil {
+						Log.Errorf("upload err:%s", err.Error())
+						resp.Error = Error(UploadFileError, err.Error())
+						return
+					}
 
-				err = oss.SaveFile(config.FaFaConfig.OssConfig, strings.Replace(helpPath, "storage/", "storage_x/", -1)+"/"+fileName, outRaw)
-				if err != nil {
-					Log.Errorf("upload err:%s", err.Error())
-					resp.Error = Error(UploadFileError, err.Error())
-					return
+					err = oss.SaveFile(config.FaFaConfig.OssConfig, strings.Replace(helpPath, "storage/", "storage_x/", -1)+"/"+fileName, outRaw)
+					if err != nil {
+						Log.Errorf("upload err:%s", err.Error())
+						resp.Error = Error(UploadFileError, err.Error())
+						return
+					}
 				}
 			}
 		}
@@ -263,7 +269,7 @@ func UploadFile(c *gin.Context) {
 	data.Size = p.Size
 	data.Url = p.Url
 	data.Oss = p.StoreType == 1
-	if data.IsPicture {
+	if data.IsPicture && CanScale {
 		data.UrlX = strings.Replace(p.Url, "/storage", "/storage_x", -1)
 	}
 
@@ -424,7 +430,7 @@ func ListFileAdminHelper(c *gin.Context, userId int64) {
 	// result
 	respResult.Files = files
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
-p.Total = int(total)
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

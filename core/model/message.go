@@ -40,11 +40,11 @@ const (
 // Message inside
 type Message struct {
 	Id                int64  `json:"id" xorm:"bigint pk autoincr"`
-	PrivateChanel     string `json:"private_chanel,omitempty" xorm:"index"`                                             // private message
-	SendUserId        int64  `json:"send_user_id,omitempty" xorm:"bigint index"`                                        // private message
-	SendMessage       string `json:"send_message,omitempty"`                                                            // private message
-	SendDeleteTime    int64  `json:"send_delete_time,omitempty"`                                                        // private message
-	SendStatus        int    `json:"send_status" xorm:"not null comment('0 waiting,1 read,2 delete') TINYINT(1) index"` // private message
+	PrivateChanel     string `json:"private_chanel,omitempty" xorm:"index"`                                     // private message
+	SendUserId        int64  `json:"send_user_id,omitempty" xorm:"bigint index"`                                // private message
+	SendMessage       string `json:"send_message,omitempty"`                                                    // private message
+	SendDeleteTime    int64  `json:"send_delete_time,omitempty"`                                                // private message
+	SendStatus        int    `json:"send_status" xorm:"not null comment('0 normal 1 delete') TINYINT(1) index"` // private message
 	ReceiveUserId     int64  `json:"receive_user_id" xorm:"bigint index"`
 	ReceiveStatus     int    `json:"receive_status" xorm:"not null comment('0 waiting,1 read,2 delete') TINYINT(1) index"`
 	CreateTime        int64  `json:"create_time"`
@@ -59,7 +59,7 @@ type Message struct {
 	PublishAgain      int    `json:"publish_again"`
 	MessageType       int    `json:"message_type" xorm:"index"`
 	CommentIsYourSelf int    `json:"comment_is_your_self"`
-	GlobalMessageId   int64  `json:"global_message_id"`
+	GlobalMessageId   int64  `json:"global_message_id" xorm:"index"`
 }
 
 type GlobalMessage struct {
@@ -194,8 +194,17 @@ func PublishContent(userId int64, receiveUserId int64, contentId int64, contentT
 	return nil
 }
 
+func GetChanelName(sendUserId, receiveUserId int64) string {
+	ch := fmt.Sprintf("%d_%d", receiveUserId, sendUserId)
+	if sendUserId > receiveUserId {
+		ch = fmt.Sprintf("%d_%d", sendUserId, receiveUserId)
+	}
+	return ch
+}
 func Private(sendUserId, receiveUserId int64, sendMessage string) error {
 	m := new(Message)
+	ch := GetChanelName(sendUserId, receiveUserId)
+	m.PrivateChanel = ch
 	m.MessageType = MessageTypePrivate
 	m.SendUserId = sendUserId
 	m.ReceiveUserId = receiveUserId
@@ -203,7 +212,7 @@ func Private(sendUserId, receiveUserId int64, sendMessage string) error {
 	return m.Insert()
 }
 
-func (m *Message) Update(ids []int64) error {
+func (m *Message) ReceiveUpdate(ids []int64) error {
 	if len(ids) == 0 || m.ReceiveUserId == 0 {
 		return errors.New("where is empty")
 	}
@@ -212,8 +221,7 @@ func (m *Message) Update(ids []int64) error {
 	sess.In("id", ids)
 	if m.ReceiveStatus == 1 {
 		m.ReadTime = time.Now().Unix()
-		m.SendStatus = 1
-		sess.Cols("read_time", "send_status")
+		sess.Cols("read_time")
 	} else if m.ReceiveStatus == 2 {
 		m.DeleteTime = time.Now().Unix()
 		sess.Cols("delete_time")
@@ -223,9 +231,28 @@ func (m *Message) Update(ids []int64) error {
 	return err
 }
 
+func (m *Message) SendUpdate(ids []int64) error {
+	if len(ids) == 0 || m.SendUserId == 0 {
+		return errors.New("where is empty")
+	}
+
+	sess := FaFaRdb.Client.Where("send_user_id=?", m.SendUserId).And("send_status!=?", 2).And("message_type=?", MessageTypePrivate).Cols("send_status")
+	sess.In("id", ids)
+	if m.SendStatus == 1 {
+		m.SendDeleteTime = time.Now().Unix()
+		sess.Cols("send_delete_time")
+	} else {
+		return nil
+	}
+
+	_, err := sess.Update(new(Message))
+	return err
+}
+
 func GroupCount(userId int64) (countMap map[string]int, err error) {
 	countMap = make(map[string]int)
 	andSQL := ""
+	// if admin, may be userId=0
 	if userId != 0 {
 		andSQL = fmt.Sprintf("and receive_user_id=%d", userId)
 	}

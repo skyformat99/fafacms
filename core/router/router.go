@@ -133,17 +133,16 @@ var (
 		"/relation/following/list": {"List You Follow Who", controllers.ListFollowingRelation, GP, false},     // 查看用户A关注了谁，然后你和谁的关系
 		"/relation/admin/list":     {"List Who Follow Who Admin", controllers.ListAllRelation, GP, true},      // 查看所有关系
 
-		"/message/list":                       {"List Your Message", controllers.ListMessage, GP, false},                         // 列出自己的系统消息
-		"/message/admin/list":                 {"List All Message", controllers.ListAllMessage, GP, false},                       // 管理员列出所有系统消息
-		"/message/read":                       {"Read Your Message", controllers.ReadMessage, GP, false},                         // 读取系统消息
-		"/message/delete":                     {"Delete Your Message", controllers.DeleteMessage, GP, false},                     // 删除系统消息
-		"/message/admin/global/create":        {"Admin Create Global Message", controllers.CreateGlobalMessage, GP, true},        // 管理员创建全局站内信
-		"/message/admin/global/list":          {"Admin List Global Message", controllers.ListGlobalMessage, GP, true},            // 管理员列出全局站内信
-		"/message/admin/global/update/status": {"Admin Change Global Message Status", controllers.UpdateGlobalMessage, GP, true}, // 管理员更改全局站内信状态
+		"/message/list":                       {"List Your Message Can Include Private Message", controllers.ListMessage, GP, false}, // 列出自己的系统消息，包括与其他用户间的私信
+		"/message/admin/list":                 {"List All Message", controllers.ListAllMessage, GP, false},                           // 管理员列出所有系统消息
+		"/message/read":                       {"Read Your Message", controllers.ReadMessage, GP, false},                             // 读取系统消息
+		"/message/delete":                     {"Delete Your Message", controllers.DeleteMessage, GP, false},                         // 删除系统消息
+		"/message/admin/global/create":        {"Admin Create Global Message", controllers.CreateGlobalMessage, GP, true},            // 管理员创建全局站内信
+		"/message/admin/global/list":          {"Admin List Global Message", controllers.ListGlobalMessage, GP, true},                // 管理员列出全局站内信
+		"/message/admin/global/update/status": {"Admin Change Global Message Status", controllers.UpdateGlobalMessage, GP, true},     // 管理员更改全局站内信状态
 
-		// todo this function
-		// can ignore!
-		"/message/private/send": {"Send Message Private", controllers.SendPrivateMessage, GP, false}, // 私信
+		"/message/private/send":   {"Send Message To Private People", controllers.SendPrivateMessage, GP, false}, // 私信
+		"/message/private/delete": {"Delete Message Has Sent", controllers.DeletePrivateMessage, GP, false},      // 删除自己发出的私信，但收件方还是可以看到
 	}
 )
 

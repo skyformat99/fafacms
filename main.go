@@ -58,6 +58,10 @@ var (
 
 	// Login Session expire time
 	sessionExpireTime int64
+
+	// Scale the picture auto
+	canScale   bool
+	scaleWidth int
 )
 
 // Parse flag when init
@@ -69,6 +73,9 @@ func init() {
 	// Auto init db, the second time can set false
 	flag.BoolVar(&createTable, "init_db", true, "Init create db table")
 
+	// Some important config
+	flag.BoolVar(&canScale, "can_scale", true, "Can scale the picture auto")
+	flag.IntVar(&scaleWidth, "scale_width", 500, "The width of scale size of picture")
 	flag.Int64Var(&timeZone, "time_zone", 8, "Time zone offset the utc")
 	flag.BoolVar(&autoBan, "auto_ban", false, "Auto ban the content or comment")
 	flag.Int64Var(&banTime, "ban_time", 10, "Content or comment will be ban in how much bad's time")
@@ -133,6 +140,8 @@ func main() {
 	controllers.AutoBan = autoBan
 	controllers.SingleLogin = singleLogin
 	controllers.SessionExpireTime = sessionExpireTime
+	controllers.CanScale = canScale
+	controllers.ScaleWidth = scaleWidth
 	model.HistoryRecord = historyRecord
 
 	var err error

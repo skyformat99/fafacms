@@ -12,8 +12,10 @@ import (
 type ListMessageRequest struct {
 	MessageId       int64    `json:"message_id"`
 	MessageType     int      `json:"message_type" validate:"oneof=-1 0 1 2 3 4 5 6 7 8 9 10 11"`
-	UserId          int64    `json:"user_id"`
+	ReceiveUserId   int64    `json:"receive_user_id"`
+	ChanelUserId    int64    `json:"chanel_user_id"`
 	ReceiveStatus   int      `json:"receive_status" validate:"oneof=-1 0 1 2"`
+	SendStatus      int      `json:"send_status" validate:"oneof=-1 0 1"`
 	GlobalMessageId int64    `json:"global_message_id"`
 	CreateTimeBegin int64    `json:"create_time_begin"`
 	CreateTimeEnd   int64    `json:"create_time_end"`
@@ -99,18 +101,30 @@ func ListMessageHelper(c *gin.Context, isAdmin bool) {
 	}
 
 	if !all {
-		// search your message which not delete
-		session.And("receive_user_id=?", yourUserId).And("receive_status!=?", 2)
+		// search chanel not delete message
+		if req.ChanelUserId != 0 {
+			session.And("send_status=?", 0).And("private_chanel=?", model.GetChanelName(yourUserId, req.ChanelUserId))
+		} else {
+			// search your message which not delete
+			session.And("receive_user_id=?", yourUserId).And("receive_status!=?", 2)
+		}
+	} else {
+		if req.ReceiveUserId != 0 {
+			if req.ChanelUserId != 0 {
+				// admin can search all
+				if req.SendStatus != -1 {
+					session.And("send_status=?", req.SendStatus)
+				}
+				session.And("private_chanel=?", model.GetChanelName(req.ReceiveUserId, req.ChanelUserId))
+			} else {
+				session.And("receive_user_id=?", req.ReceiveUserId)
+			}
+		}
+
 	}
 
-	if all {
-		if req.UserId != 0 {
-			session.And("receive_user_id=?", req.UserId)
-		}
-
-		if req.GlobalMessageId != 0 {
-			session.And("global_message_id=?", req.GlobalMessageId)
-		}
+	if req.GlobalMessageId != 0 {
+		session.And("global_message_id=?", req.GlobalMessageId)
 	}
 
 	// count all message num
@@ -123,6 +137,7 @@ func ListMessageHelper(c *gin.Context, isAdmin bool) {
 		return
 	}
 
+	// count unread messages
 	countMap, err := model.GroupCount(yourUserId)
 	if err != nil {
 		flog.Log.Errorf("ListMessageHelper err:%s", err.Error())
@@ -263,7 +278,7 @@ func ReadMessage(c *gin.Context) {
 	m := new(model.Message)
 	m.ReceiveUserId = uu.Id
 	m.ReceiveStatus = 1
-	err = m.Update(req.Ids)
+	err = m.ReceiveUpdate(req.Ids)
 	if err != nil {
 		flog.Log.Errorf("ReadMessage err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -304,7 +319,7 @@ func DeleteMessage(c *gin.Context) {
 	m := new(model.Message)
 	m.ReceiveUserId = uu.Id
 	m.ReceiveStatus = 2
-	err = m.Update(req.Ids)
+	err = m.ReceiveUpdate(req.Ids)
 	if err != nil {
 		flog.Log.Errorf("DeleteMessage err: %s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -568,11 +583,81 @@ func SendPrivateMessage(c *gin.Context) {
 		return
 	}
 
-	//uu, err := GetUserSession(c)
-	//if err != nil {
-	//	flog.Log.Errorf("SendPrivateMessage err: %s", err.Error())
-	//	resp.Error = Error(GetUserSessionError, err.Error())
-	//	return
-	//}
+	targetUser := new(model.User)
+	targetUser.Id = req.UserId
+	ok, err := targetUser.GetRaw()
+	if err != nil {
+		flog.Log.Errorf("SendPrivateMessage err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok {
+		flog.Log.Errorf("SendPrivateMessage err: %s", "user not found")
+		resp.Error = Error(UserNotFound, "")
+		return
+	}
+
+	if targetUser.Status == 0 {
+		flog.Log.Errorf("SendPrivateMessage err: %s", "user not activate")
+		resp.Error = Error(UserNotActivate, "")
+		return
+	}
+
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("SendPrivateMessage err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	err = model.Private(uu.Id, targetUser.Id, req.Message)
+	if err != nil {
+		flog.Log.Errorf("SendPrivateMessage err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	resp.Flag = true
+}
+
+type DeletePrivateMessageRequest struct {
+	Ids []int64 `json:"ids"`
+}
+
+func DeletePrivateMessage(c *gin.Context) {
+	resp := new(Resp)
+	req := new(DeletePrivateMessageRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if len(req.Ids) == 0 {
+		flog.Log.Errorf("DeletePrivateMessage err: %s", "ids empty")
+		resp.Error = Error(ParasError, "ids empty")
+		return
+	}
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("DeletePrivateMessage err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	m := new(model.Message)
+	m.SendUserId = uu.Id
+	m.SendStatus = 1
+	err = m.SendUpdate(req.Ids)
+	if err != nil {
+		flog.Log.Errorf("DeletePrivateMessage err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
 	resp.Flag = true
 }

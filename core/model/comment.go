@@ -24,6 +24,7 @@ type ContentHelper struct {
 	UserId      int64  `json:"user_id"`
 	UserName    string `json:"user_name"`
 	Seo         string `json:"seo"`
+	NodeSeo     string `json:"node_seo"`
 	Status      int    `json:"status"`
 	CommentNum  int64  `json:"comment_num"`
 	IsYourself  bool   `json:"is_yourself"`
@@ -36,7 +37,7 @@ func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]C
 		return
 	}
 	cs := make([]Content, 0)
-	err = FaFaRdb.Client.Cols("id", "ban_time", "title", "status", "seo", "user_name", "user_id", "comment_num").In("id", ids).Find(&cs)
+	err = FaFaRdb.Client.Cols("id", "ban_time", "title", "status", "seo", "node_seo", "user_name", "user_id", "comment_num").In("id", ids).Find(&cs)
 	if err != nil {
 		return
 	}
@@ -51,6 +52,7 @@ func GetContentHelper(ids []int64, all bool, yourUserId int64) (back map[int64]C
 			Status:     v.Status,
 			BanTime:    v.BanTime,
 			CommentNum: v.CommentNum,
+			NodeSeo:    v.NodeSeo,
 		}
 
 		if v.Status == 1 {

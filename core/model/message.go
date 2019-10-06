@@ -9,32 +9,32 @@ import (
 
 const (
 	// who comment your content or comment message
-	MessageTypeCommentForContent = 0
-	MessageTypeCommentForComment = 1
+	MessageTypeCommentForContent = 0 // 内容被评论
+	MessageTypeCommentForComment = 1 // 评论被评论
 
 	// who good your content or comment message
-	MessageTypeGoodContent = 2
-	MessageTypeGoodComment = 3
+	MessageTypeGoodContent = 2 // 内容被点赞
+	MessageTypeGoodComment = 3 // 评论被点赞
 
 	// comment or content be ban by system message
-	MessageTypeContentBan = 4
-	MessageTypeCommentBan = 5
+	MessageTypeContentBan = 4 // 内容被违禁
+	MessageTypeCommentBan = 5 // 评论被违禁
 
 	// comment or content be ban by recover message
-	MessageTypeContentRecover = 6
-	MessageTypeCommentRecover = 7
+	MessageTypeContentRecover = 6 // 内容被解除违禁
+	MessageTypeCommentRecover = 7 // 评论被解除违禁
 
 	// who follow you message
-	MessageTypeFollow = 8
+	MessageTypeFollow = 8 // 有人关注你
 
 	// who you follow publish content
-	MessageTypeContentPublish = 9
+	MessageTypeContentPublish = 9 // 你关注的人发布了内容
 
 	// who send a message to you
-	MessageTypePrivate = 10
+	MessageTypePrivate = 10 // 私信
 
 	// global send a message to you
-	MessageTypeGlobal = 11
+	MessageTypeGlobal = 11 // 管理员通知
 )
 
 // Message inside
@@ -227,7 +227,7 @@ func (m *Message) ReceiveUpdate(ids []int64) error {
 		sess.Cols("delete_time")
 	}
 
-	_, err := sess.Update(new(Message))
+	_, err := sess.Update(m)
 	return err
 }
 
@@ -245,7 +245,7 @@ func (m *Message) SendUpdate(ids []int64) error {
 		return nil
 	}
 
-	_, err := sess.Update(new(Message))
+	_, err := sess.Update(m)
 	return err
 }
 

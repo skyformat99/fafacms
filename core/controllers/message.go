@@ -457,7 +457,7 @@ func ListGlobalMessage(c *gin.Context) {
 		session.And("id=?", req.Id)
 	}
 
-	if req.Status == -1 {
+	if req.Status != -1 {
 		session.And("status=?", req.Status)
 	}
 

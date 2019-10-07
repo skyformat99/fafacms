@@ -170,54 +170,63 @@ func (c *Content) UpdateImage() (int64, error) {
 	return FaFaRdb.Client.Cols("image_path").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)
 }
 
-func (c *Content) UpdateStatus(isBanChange bool) (int64, error) {
+func (c *Content) UpdateStatus(normal bool, isBanChange bool) (int64, error) {
 	if c.UserId == 0 || c.Id == 0 {
 		return 0, errors.New("where is empty")
 	}
 
-	if c.Status == 2 {
-		c.BanTime = time.Now().Unix()
-		num, err := FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("user_id=?", c.UserId).And("status!=?",2).Update(c)
-		if err != nil {
-			return 0, err
+	if !normal {
+		if c.Status == 2 {
+			c.BanTime = time.Now().Unix()
+			num, err := FaFaRdb.Client.Cols("status", "ban_time").Where("id=?", c.Id).And("user_id=?", c.UserId).And("status!=?", 2).Update(c)
+			if err != nil {
+				return 0, err
+			}
+
+			if num > 0 {
+				go BanContent(c.UserId, c.Id, c.Title)
+			}
+
+			return 0, nil
+		} else if isBanChange {
+			se := FaFaRdb.Client.NewSession()
+			defer se.Close()
+			err := se.Begin()
+			if err != nil {
+				return 0, err
+			}
+
+			c.BanTime = 0
+			c.Bad = 0
+			num, err := se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).And("status=?", 2).And("user_id=?", c.UserId).Update(c)
+			if err != nil {
+				se.Rollback()
+				return 0, err
+			}
+
+			if num == 0 {
+				se.Rollback()
+				return 0, errors.New("some err")
+			}
+
+			_, err = se.Where("content_id=?", c.Id).Delete(new(ContentBad))
+			if err != nil {
+				se.Rollback()
+				return 0, err
+			}
+
+			err = se.Commit()
+			if err != nil {
+				se.Rollback()
+				return 0, err
+			}
+
+			if num > 0 {
+				go RecoverContent(c.UserId, c.Id, c.Title)
+			}
+			return 0, nil
 		}
 
-		if num > 0 {
-			go BanContent(c.UserId, c.Id, c.Title)
-		}
-	}
-
-	if isBanChange {
-		se := FaFaRdb.Client.NewSession()
-		defer se.Close()
-		err := se.Begin()
-		if err != nil {
-			return 0, err
-		}
-
-		_, err = se.Where("content_id=?", c.Id).Delete(new(ContentBad))
-		if err != nil {
-			se.Rollback()
-			return 0, err
-		}
-
-		c.BanTime = 0
-		c.Bad = 0
-		num, err := se.Cols("status", "ban_time", "bad").Where("id=?", c.Id).And("status=?", 2).And("user_id=?", c.UserId).Update(c)
-		if err != nil {
-			se.Rollback()
-			return 0, err
-		}
-
-		err = se.Commit()
-		if err != nil {
-			se.Rollback()
-			return 0, err
-		}
-
-		if num > 0 {
-			go RecoverContent(c.UserId, c.Id, c.Title)
-		}
 		return 0, nil
 	}
 	return FaFaRdb.Client.Cols("status").Where("id=?", c.Id).And("user_id=?", c.UserId).Update(c)

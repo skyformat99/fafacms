@@ -16,6 +16,70 @@ var htmlEscaper = strings.NewReplacer(
 	`>`, "&gt;",
 )
 
+type RealNameCommentRequest struct {
+	CommentId int64 `json:"id"`
+}
+
+func RealNameComment(c *gin.Context) {
+	resp := new(Resp)
+	req := new(RealNameCommentRequest)
+	defer func() {
+		JSONL(c, 200, req, resp)
+	}()
+
+	if errResp := ParseJSON(c, req); errResp != nil {
+		resp.Error = errResp
+		return
+	}
+
+	if req.CommentId == 0 {
+		flog.Log.Errorf("RealNameComment err: %s", "comment_id empty")
+		resp.Error = Error(ParasError, "comment_id empty")
+		return
+	}
+
+	uu, err := GetUserSession(c)
+	if err != nil {
+		flog.Log.Errorf("RealNameComment err: %s", err.Error())
+		resp.Error = Error(GetUserSessionError, err.Error())
+		return
+	}
+
+	targetComment := new(model.Comment)
+	targetComment.Id = req.CommentId
+	ok, err := targetComment.Get()
+	if err != nil {
+		flog.Log.Errorf("RealNameComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+
+	if !ok || targetComment.IsDelete == 1 {
+		flog.Log.Errorf("RealNameComment err: %s", "comment not found")
+		resp.Error = Error(CommentNotFound, "")
+		return
+	}
+
+	if targetComment.CommentAnonymous != 1 {
+		resp.Flag = true
+		return
+	}
+
+	if targetComment.UserId != uu.Id {
+		flog.Log.Errorf("RealNameComment err: %s", "comment not your's")
+		resp.Error = Error(CommentNotFound, "")
+		return
+	}
+
+	_, err = targetComment.UpdateToShowName()
+	if err != nil {
+		flog.Log.Errorf("RealNameComment err: %s", err.Error())
+		resp.Error = Error(DBError, err.Error())
+		return
+	}
+	resp.Flag = true
+}
+
 type CreateCommentRequest struct {
 	ContentId   int64  `json:"content_id"`
 	CommentId   int64  `json:"comment_id"`

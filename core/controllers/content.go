@@ -343,7 +343,7 @@ func UpdateStatusOfContentAdmin(c *gin.Context) {
 		content.Status = req.Status
 		content.UserId = contentBefore.UserId
 		content.Title = contentBefore.Title
-		_, err = content.UpdateStatus(contentBefore.Status == 2)
+		_, err = content.UpdateStatus(false, contentBefore.Status == 2)
 		if err != nil {
 			flog.Log.Errorf("UpdateStatusOfContentAdmin err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -419,7 +419,7 @@ func UpdateStatusOfContent(c *gin.Context) {
 	content.UserId = uu.Id
 	if req.Status != contentBefore.Status {
 		content.Status = req.Status
-		_, err = content.UpdateStatus(false)
+		_, err = content.UpdateStatus(true, false)
 		if err != nil {
 			flog.Log.Errorf("UpdateStatusOfContent err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())
@@ -1617,17 +1617,17 @@ func SentContentToRubbish(c *gin.Context) {
 		return
 	}
 
-	if contentBefore.Status == 2 {
-		flog.Log.Errorf("SentContentToRubbish err: %s", "can not sent to rubbish")
-		resp.Error = Error(ContentBanPermit, "can not sent to rubbish")
-		return
-	}
+	//if contentBefore.Status == 2 {
+	//	flog.Log.Errorf("SentContentToRubbish err: %s", "can not sent to rubbish")
+	//	resp.Error = Error(ContentBanPermit, "can not sent to rubbish")
+	//	return
+	//}
 
 	content := new(model.Content)
 	content.Id = req.Id
 	content.UserId = uu.Id
 	content.Status = 3
-	_, err = content.UpdateStatus(false)
+	_, err = content.UpdateStatus(true, false)
 	if err != nil {
 		flog.Log.Errorf("SentContentToRubbish err:%s", err.Error())
 		resp.Error = Error(DBError, err.Error())
@@ -1688,8 +1688,13 @@ func ReCycleOfContentInRubbish(c *gin.Context) {
 		content := new(model.Content)
 		content.Id = req.Id
 		content.UserId = uu.Id
-		content.Status = 1
-		_, err = content.UpdateStatus(false)
+
+		if contentBefore.BanTime == 0 {
+			content.Status = 1
+		} else {
+			content.Status = 2
+		}
+		_, err = content.UpdateStatus(true, false)
 		if err != nil {
 			flog.Log.Errorf("ReCycleOfContentInRubbish err:%s", err.Error())
 			resp.Error = Error(DBError, err.Error())

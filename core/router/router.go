@@ -118,6 +118,7 @@ var (
 		"/content/cool":                {"Cool the Content Self", controllers.CoolContent, GP, false},                               // 点赞内容
 		"/content/bad":                 {"Bad the Content Self", controllers.BadContent, GP, false},                                 // 举报内容
 		"/comment/create":              {"Create the Comment Self", controllers.CreateComment, POST, false},                         // 创建评论
+		"/comment/real/name":           {"Real Name the Comment Self", controllers.RealNameComment, POST, false},                    // 评论取消匿名
 		"/comment/delete":              {"Delete the Comment Self", controllers.DeleteComment, POST, false},                         // 删除评论，逻辑删除
 		"/comment/take":                {"Take the Comment Self", controllers.TakeComment, GP, false},                               // 获取评论
 		"/comment/cool":                {"Cool the Comment Self", controllers.CoolComment, GP, false},                               // 点赞评论

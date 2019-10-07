@@ -653,3 +653,14 @@ func (c *Comment) Ban(num int64) (err error) {
 	}
 	return
 }
+
+func (c *Comment) UpdateToShowName() (int64, error) {
+	if c.Id == 0 {
+		return 0, errors.New("where is empty")
+	}
+
+	c.CommentAnonymous = 0
+	num, err := FaFaRdb.Client.Cols("comment_anonymous").Where("id=?", c.Id).And("comment_anonymous!=?", 0).Update(c)
+
+	return num, err
+}

@@ -15,7 +15,6 @@ type CountType struct {
 }
 
 func SendToLoop(userId, nodeId int64, t int) {
-	flog.Log.Debugf("Ticker SendToLoop: %v", userId)
 	LoopChan <- CountType{
 		UserId: userId,
 		NodeId: nodeId,
@@ -28,7 +27,7 @@ func LoopCount() {
 	for {
 		select {
 		case v := <-LoopChan:
-			flog.Log.Debugf("Ticker Count: %v", v)
+			flog.Log.Debugf("Ticker Count: %#v", v)
 			if v.T == 1 {
 				if v.UserId != 0 {
 					err := model.CountContentAll(v.UserId)
@@ -52,8 +51,8 @@ func LoopCount() {
 				}
 			}
 
-		case <-time.After(1 * time.Second):
-			flog.Log.Debugf("Ticker...")
+		case <-time.After(5 * time.Second):
+			//flog.Log.Debugf("Ticker...")
 
 		}
 	}

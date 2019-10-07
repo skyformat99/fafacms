@@ -39,7 +39,7 @@ func CountContentAll(userId int64) (err error) {
 
 	u := new(User)
 	u.ContentNum = int64(back)
-	_, err = FaFaRdb.Client.Where("user_id=?", userId).Cols("content_num").Update(u)
+	_, err = FaFaRdb.Client.Where("id=?", userId).Cols("content_num").Update(u)
 	return
 }
 
@@ -93,6 +93,6 @@ func CountContentCool(userId int64) (err error) {
 
 	u := new(User)
 	u.ContentCoolNum = int64(back)
-	_, err = FaFaRdb.Client.Where("user_id=?", userId).Cols("content_cool_num").Update(u)
+	_, err = FaFaRdb.Client.Where("id=?", userId).Cols("content_cool_num").Update(u)
 	return
 }

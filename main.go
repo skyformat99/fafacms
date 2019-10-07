@@ -199,7 +199,7 @@ func main() {
 	}
 
 	controllers.AdminUrl = initResource()
-	
+
 	// Count ticker
 	go controllers.LoopCount()
 
@@ -223,7 +223,8 @@ func main() {
 
 	err = engine.Run(config.FaFaConfig.DefaultConfig.WebPort)
 	if err != nil {
-		panic(err)
+		flog.Log.Errorf("Server run err: %s", err.Error())
+		return
 	}
 }
 

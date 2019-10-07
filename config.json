@@ -1,6 +1,6 @@
 {
   "DefaultConfig": {
-    "WebPort": ":8080",
+    "WebPort": "0.0.0.0:8080",
     "StorageOss": false,
     "StoragePath": "./data/storage",
     "LogDebug": true,

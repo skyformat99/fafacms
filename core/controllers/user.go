@@ -760,6 +760,8 @@ func TakeUser(c *gin.Context) {
 	p.Gender = v.Gender
 	p.FollowingNum = v.FollowingNum
 	p.FollowedNum = v.FollowedNum
+	p.ContentNum = v.ContentNum
+	p.ContentCoolNum = v.ContentCoolNum
 	p.IsVip = v.Vip == 1
 	resp.Flag = true
 	resp.Data = p
@@ -906,7 +908,7 @@ func ListUser(c *gin.Context) {
 	// result
 	respResult.Users = users
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
-p.Total = int(total)
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

@@ -59,6 +59,8 @@ type People struct {
 	IsVip                 bool   `json:"is_vip"`
 	FollowedNum           int64  `json:"followed_num"`
 	FollowingNum          int64  `json:"following_num"`
+	ContentNum            int64  `json:"content_num"`      // normal publish content num
+	ContentCoolNum        int64  `json:"content_cool_num"` // normal content cool num
 }
 
 type PeoplesRequest struct {
@@ -171,11 +173,13 @@ func Peoples(c *gin.Context) {
 		p.IsVip = v.Vip == 1
 		p.FollowedNum = v.FollowedNum
 		p.FollowingNum = v.FollowingNum
+		p.ContentNum = v.ContentNum
+		p.ContentCoolNum = v.ContentCoolNum
 		peoples = append(peoples, p)
 	}
 	respResult.Users = peoples
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
-p.Total = int(total)
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true
@@ -198,6 +202,7 @@ type Node struct {
 	Status        int    `json:"status"`
 	ParentNodeId  int64  `json:"parent_node_id"`
 	Son           []Node `json:"son,omitempty"`
+	ContentNum    int64  `json:"content_num"` // normal publish content num
 }
 
 type NodesInfoRequest struct {
@@ -281,6 +286,7 @@ func NodesInfo(c *gin.Context) {
 		f.UserId = v.UserId
 		f.Level = v.Level
 		f.ParentNodeId = v.ParentNodeId
+		f.ContentNum = v.ContentNum
 		for _, vv := range son {
 			if vv.ParentNodeId == f.Id {
 				s := Node{}
@@ -299,6 +305,7 @@ func NodesInfo(c *gin.Context) {
 				s.UserId = vv.UserId
 				s.UserName = vv.UserName
 				s.Level = vv.Level
+				s.ContentNum = vv.ContentNum
 				s.ParentNodeId = vv.ParentNodeId
 				f.Son = append(f.Son, s)
 			}
@@ -399,6 +406,7 @@ func NodeInfo(c *gin.Context) {
 	f.UserId = v.UserId
 	f.Level = v.Level
 	f.ParentNodeId = v.ParentNodeId
+	f.ContentNum = v.ContentNum
 
 	// 是顶层且需要列出儿子
 	if f.Level == 0 && req.ListSon {
@@ -428,6 +436,7 @@ func NodeInfo(c *gin.Context) {
 			ff.UserId = vv.UserId
 			ff.Level = vv.Level
 			ff.ParentNodeId = vv.ParentNodeId
+			ff.ContentNum = vv.ContentNum
 			f.Son = append(f.Son, ff)
 		}
 	}
@@ -511,6 +520,8 @@ func UserInfo(c *gin.Context) {
 	p.Gender = v.Gender
 	p.FollowingNum = v.FollowingNum
 	p.FollowedNum = v.FollowedNum
+	p.ContentNum = v.ContentNum
+	p.ContentCoolNum = v.ContentCoolNum
 	p.IsVip = v.Vip == 1
 	resp.Flag = true
 	resp.Data = p
@@ -570,7 +581,7 @@ func UserCount(c *gin.Context) {
 
 	req.UserId = user.Id
 
-	sql := fmt.Sprintf("SELECT DATE_FORMAT(from_unixtime(first_publish_time + %d * 3600)", TimeZone) + ",'%Y%m%d') days,count(id) count FROM `fafacms_content` WHERE first_publish_time!=0 and user_id=? and version>0 and status!=1 and status!=3 group by days;"
+	sql := fmt.Sprintf("SELECT DATE_FORMAT(from_unixtime(first_publish_time + %d * 3600)", TimeZone) + ",'%Y%m%d') as days,count(id) as count FROM `fafacms_content` WHERE first_publish_time!=0 and user_id=? and version>0 and status!=1 and status!=3 group by days;"
 	result, err := model.FaFaRdb.Client.QueryString(sql, req.UserId)
 	if err != nil {
 		flog.Log.Errorf("UserCount err:%s", err.Error())
@@ -775,7 +786,7 @@ func Contents(c *gin.Context) {
 
 	respResult.Contents = bcs
 	p.Pages = int(math.Ceil(float64(total) / float64(p.Limit)))
-p.Total = int(total)
+	p.Total = int(total)
 	respResult.PageHelp = *p
 	resp.Data = respResult
 	resp.Flag = true

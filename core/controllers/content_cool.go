@@ -99,6 +99,8 @@ func CoolContent(c *gin.Context) {
 	} else {
 		resp.Data = "+"
 	}
+
+	go SendToLoop(content.UserId, 0, 3)
 	return
 }
 

@@ -199,10 +199,12 @@ func main() {
 	}
 
 	controllers.AdminUrl = initResource()
+	
+	// Count ticker
+	go controllers.LoopCount()
 
 	// Server Run
 	engine := server.Server()
-
 	// Storage static API
 	engine.Static("/storage", config.FaFaConfig.DefaultConfig.StoragePath)
 	engine.Static("/storage_x", config.FaFaConfig.DefaultConfig.StoragePath+"_x")
@@ -218,6 +220,7 @@ func main() {
 	router.SetAPIRouter(v1, router.V1Router)
 
 	flog.Log.Noticef("Server run in %s", config.FaFaConfig.DefaultConfig.WebPort)
+
 	err = engine.Run(config.FaFaConfig.DefaultConfig.WebPort)
 	if err != nil {
 		panic(err)

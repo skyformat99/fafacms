@@ -3,11 +3,8 @@ package flog
 import (
 	"fmt"
 	"github.com/hunterhug/fafacms/core/util/log"
-	"path/filepath"
-)
-
-import (
 	"os"
+	"path/filepath"
 	"strings"
 )
 

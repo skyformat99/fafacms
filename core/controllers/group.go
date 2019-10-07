@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 	"github.com/hunterhug/fafacms/core/flog"
@@ -16,6 +17,7 @@ type CreateGroupRequest struct {
 }
 
 func CreateGroup(c *gin.Context) {
+	fmt.Println("you are my joy")
 	resp := new(Resp)
 	req := new(CreateGroupRequest)
 	defer func() {

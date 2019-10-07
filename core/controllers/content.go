@@ -349,6 +349,11 @@ func UpdateStatusOfContentAdmin(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
+
+		go SendToLoop(contentBefore.UserId, 0, 1)
+		go SendToLoop(contentBefore.UserId, contentBefore.NodeId, 2)
+		go SendToLoop(contentBefore.UserId, 0, 3)
+
 	}
 	resp.Flag = true
 }
@@ -425,6 +430,10 @@ func UpdateStatusOfContent(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
+
+		go SendToLoop(contentBefore.UserId, 0, 1)
+		go SendToLoop(contentBefore.UserId, contentBefore.NodeId, 2)
+		go SendToLoop(contentBefore.UserId, 0, 3)
 	}
 	resp.Flag = true
 }
@@ -506,6 +515,9 @@ func UpdateNodeOfContent(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
+
+		go SendToLoop(uu.Id, contentBefore.NodeId, 2)
+		go SendToLoop(uu.Id, req.NodeId, 2)
 	}
 	resp.Flag = true
 }
@@ -1016,6 +1028,8 @@ func PublishContent(c *gin.Context) {
 
 	if content.Version == 1 {
 		go model.PublishContent(uu.Id, 0, content.Id, content.Title, false)
+		go SendToLoop(uu.Id, 0, 1)
+		go SendToLoop(uu.Id, content.NodeId, 2)
 	} else {
 		go model.PublishContent(uu.Id, 0, content.Id, content.Title, true)
 	}
@@ -1634,6 +1648,9 @@ func SentContentToRubbish(c *gin.Context) {
 		return
 	}
 
+	go SendToLoop(uu.Id, 0, 1)
+	go SendToLoop(uu.Id, contentBefore.NodeId, 2)
+	go SendToLoop(uu.Id, 0, 3)
 	resp.Flag = true
 }
 
@@ -1700,6 +1717,10 @@ func ReCycleOfContentInRubbish(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
+
+		go SendToLoop(uu.Id, 0, 1)
+		go SendToLoop(uu.Id, contentBefore.NodeId, 2)
+		go SendToLoop(uu.Id, 0, 3)
 	}
 
 	resp.Flag = true
@@ -1762,6 +1783,10 @@ func ReallyDeleteContent(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
+
+		go SendToLoop(uu.Id, 0, 1)
+		go SendToLoop(uu.Id, contentBefore.NodeId, 2)
+		go SendToLoop(uu.Id, 0, 3)
 	} else {
 		flog.Log.Errorf("ReallyDeleteContent err: %s", "content can not delete")
 		resp.Error = Error(ContentCanNotDelete, "")

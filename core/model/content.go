@@ -10,19 +10,19 @@ var HistoryRecord = true
 type Content struct {
 	Id               int64  `json:"id" xorm:"bigint pk autoincr"`
 	Seo              string `json:"seo" xorm:"index"`
-	Title            string `json:"title" xorm:"varchar(200) notnull"`
-	PreTitle         string `json:"pre_title" xorm:"varchar(200) notnull"`
+	Title            string `json:"title" xorm:"varchar(200)"`
+	PreTitle         string `json:"pre_title" xorm:"varchar(200)"`
 	UserId           int64  `json:"user_id" xorm:"bigint index"`
 	UserName         string `json:"user_name" xorm:"index"`
 	NodeId           int64  `json:"node_id" xorm:"bigint index"`
 	NodeSeo          string `json:"node_seo" xorm:"index"`
-	Status           int    `json:"status" xorm:"not null comment('0 normal, 1 hide，2 ban, 3 rubbish') TINYINT(1) index"`
-	Top              int    `json:"top" xorm:"not null comment('0 normal, 1 top') TINYINT(1) index"`
+	Status           int    `json:"status" xorm:"notnull default(0) comment('0 normal, 1 hide，2 ban, 3 rubbish') TINYINT(1) index"`
+	Top              int    `json:"top" xorm:"notnull default(0) comment('0 normal, 1 top') TINYINT(1) index"`
 	Describe         string `json:"describe" xorm:"TEXT"`
 	PreDescribe      string `json:"pre_describe" xorm:"TEXT"`
-	PreFlush         int    `json:"pre_flush" xorm:"not null comment('1 flush') TINYINT(1)"`
-	CloseComment     int    `json:"close_comment" xorm:"not null comment('0 open, 1 close') TINYINT(1)"`
-	Version          int    `json:"version" xorm:"notnull"`
+	PreFlush         int    `json:"pre_flush" xorm:"notnull default(0) comment('1 flush') TINYINT(1)"`
+	CloseComment     int    `json:"close_comment" xorm:"notnull default(0) comment('0 open, 1 close') TINYINT(1)"`
+	Version          int    `json:"version" xorm:"notnull default(0)"`
 	CreateTime       int64  `json:"create_time"`
 	UpdateTime       int64  `json:"update_time,omitempty"`
 	BanTime          int64  `json:"ban_time,omitempty"`
@@ -31,10 +31,10 @@ type Content struct {
 	ImagePath        string `json:"image_path" xorm:"varchar(700)"`
 	Views            int64  `json:"views"`
 	Password         string `json:"password,omitempty"`
-	SortNum          int64  `json:"sort_num" xorm:"notnull"`
-	Bad              int64  `json:"bad" xorm:"notnull"`
-	Cool             int64  `json:"cool" xorm:"notnull"`
-	CommentNum       int64  `json:"comment_num" xorm:"notnull"`
+	SortNum          int64  `json:"sort_num" xorm:"notnull default(0)"`
+	Bad              int64  `json:"bad" xorm:"notnull default(0)"`
+	Cool             int64  `json:"cool" xorm:"notnull default(0)"`
+	CommentNum       int64  `json:"comment_num" xorm:"notnull default(0)"`
 }
 
 var ContentSortName = []string{"=id", "-user_id", "-top", "+sort_num", "-first_publish_time", "-publish_time", "-create_time", "-update_time", "-views", "=comment_num", "=bad", "=cool", "=version", "+status", "=seo"}
@@ -55,7 +55,7 @@ type ContentHistory struct {
 	UserId     int64  `json:"user_id" xorm:"bigint index"`
 	NodeId     int64  `json:"node_id" xorm:"bigint index"`
 	Describe   string `json:"describe" xorm:"TEXT"`
-	Types      int    `json:"types" xorm:"not null comment('0 update save, 1 publish, 2 restore') TINYINT(1)"`
+	Types      int    `json:"types" xorm:"notnull default(0) comment('0 update save, 1 publish, 2 restore') TINYINT(1)"`
 	Version    int    `json:"version"`
 	CreateTime int64  `json:"create_time"`
 }

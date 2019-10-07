@@ -264,10 +264,10 @@ type Comment struct {
 	RootCommentUserName string `json:"-" xorm:"index"`
 	Describe            string `json:"-" xorm:"TEXT"`
 	CreateTime          int64  `json:"-"`
-	Status              int    `json:"-" xorm:"not null comment('0 normal, 1 ban') TINYINT(1) index"`
+	Status              int    `json:"-" xorm:"notnull default(0) comment('0 normal, 1 ban') TINYINT(1) index"`
 	BanTime             int64  `json:"-"`
-	Cool                int64  `json:"-" xorm:"notnull"`
-	Bad                 int64  `json:"-" xorm:"notnull"`
+	Cool                int64  `json:"-" xorm:"notnull default(0)"`
+	Bad                 int64  `json:"-" xorm:"notnull default(0)"`
 	CommentType         int    `json:"comment_type"` // 0 comment to content, 1 comment to comment, 2 comment to comment more
 	CommentAnonymous    int    `json:"-"`
 	IsDelete            int    `json:"-"`

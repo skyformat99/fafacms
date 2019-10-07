@@ -420,6 +420,9 @@ func UpdateStatusOfNode(c *gin.Context) {
 		resp.Error = Error(DBError, err.Error())
 		return
 	}
+
+	go SendToLoop(n.UserId, 0, 1)
+	go SendToLoop(n.UserId, 0, 3)
 	resp.Flag = true
 }
 
@@ -990,7 +993,7 @@ func SortNode(c *gin.Context) {
 			resp.Error = Error(DBError, err.Error())
 			return
 		}
-		
+
 		resp.Flag = true
 		return
 	}

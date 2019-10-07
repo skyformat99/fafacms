@@ -10,7 +10,7 @@ type ContentNode struct {
 	UserId       int64  `json:"user_id" xorm:"bigint index"`
 	UserName     string `json:"user_name" xorm:"index"`
 	Seo          string `json:"seo" xorm:"index"`
-	Status       int    `json:"status" xorm:"not null comment('0 normal,1 hide') TINYINT(1) index"`
+	Status       int    `json:"status" xorm:"notnull default(0) comment('0 normal,1 hide') TINYINT(1) index"`
 	Name         string `json:"name" xorm:"varchar(100) notnull"`
 	Describe     string `json:"describe" xorm:"TEXT"`
 	CreateTime   int64  `json:"create_time"`
@@ -18,10 +18,11 @@ type ContentNode struct {
 	ImagePath    string `json:"image_path" xorm:"varchar(700)"`
 	ParentNodeId int64  `json:"parent_node_id" xorm:"bigint index"`
 	Level        int    `json:"level"`
-	SortNum      int64  `json:"sort_num" xorm:"notnull"`
+	SortNum      int64  `json:"sort_num" xorm:"notnull default(0)"`
+	ContentNum   int64  `json:"content_num" xorm:"notnull default(0)"` // normal publish content num
 }
 
-var ContentNodeSortName = []string{"=id", "+sort_num", "-create_time", "-update_time", "+status", "=seo"}
+var ContentNodeSortName = []string{"=id", "+sort_num", "-create_time", "-update_time", "+status", "=seo", "=content_num"}
 
 func (n *ContentNode) CountNodeNum() (int64, error) {
 	if n.UserId == 0 {

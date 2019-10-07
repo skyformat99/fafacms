@@ -44,9 +44,9 @@ type Message struct {
 	SendUserId        int64  `json:"send_user_id,omitempty" xorm:"bigint index"`                                // private message
 	SendMessage       string `json:"send_message,omitempty"`                                                    // private message
 	SendDeleteTime    int64  `json:"send_delete_time,omitempty"`                                                // private message
-	SendStatus        int    `json:"send_status" xorm:"not null comment('0 normal 1 delete') TINYINT(1) index"` // private message
+	SendStatus        int    `json:"send_status" xorm:"notnull default(0) comment('0 normal 1 delete') TINYINT(1) index"` // private message
 	ReceiveUserId     int64  `json:"receive_user_id" xorm:"bigint index"`
-	ReceiveStatus     int    `json:"receive_status" xorm:"not null comment('0 waiting,1 read,2 delete') TINYINT(1) index"`
+	ReceiveStatus     int    `json:"receive_status" xorm:"notnull default(0) comment('0 waiting,1 read,2 delete') TINYINT(1) index"`
 	CreateTime        int64  `json:"create_time"`
 	ReadTime          int64  `json:"read_time"`
 	DeleteTime        int64  `json:"delete_time,omitempty"`
@@ -67,9 +67,9 @@ type GlobalMessage struct {
 	CreateTime  int64  `json:"create_time"`
 	UpdateTime  int64  `json:"update_time"`
 	SendMessage string `json:"send_message"`
-	Status      int    `json:"status" xorm:"not null comment('0 waiting,1 normal,2 delete') TINYINT(1) index"`
-	Total       int64  `json:"total" xorm:"not null"`
-	Success     int64  `json:"success" xorm:"not null"`
+	Status      int    `json:"status" xorm:"notnull default(0) comment('0 waiting,1 normal,2 delete') TINYINT(1) index"`
+	Total       int64  `json:"total" xorm:"notnull default(0)"`
+	Success     int64  `json:"success" xorm:"notnull default(0)"`
 }
 
 var MessageSortName = []string{"=id", "-create_time", "=receive_status", "=send_status", "=message_type", "=send_user_id", "=receive_user_id"}

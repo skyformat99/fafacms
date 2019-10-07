@@ -18,7 +18,7 @@ type User struct {
 	Github              string `json:"github" xorm:"TEXT"`
 	QQ                  string `json:"qq" xorm:"varchar(100)"`
 	Password            string `json:"password,omitempty" xorm:"varchar(100)"`
-	Gender              int    `json:"gender" xorm:"not null comment('0 unknow,1 boy,2 girl') TINYINT(1)"`
+	Gender              int    `json:"gender" xorm:"notnull default(0) comment('0 unknow,1 boy,2 girl') TINYINT(1)"`
 	ShortDescribe       string `json:"short_describe"`
 	Describe            string `json:"describe" xorm:"TEXT"`
 	HeadPhoto           string `json:"head_photo" xorm:"varchar(700)"`
@@ -27,18 +27,20 @@ type User struct {
 	ActivateTime        int64  `json:"activate_time,omitempty"`              // activate time
 	ActivateCode        string `json:"activate_code,omitempty" xorm:"index"` // activate code
 	ActivateCodeExpired int64  `json:"activate_code_expired,omitempty"`      // activate code expired time
-	Status              int    `json:"status" xorm:"not null comment('0 un active, 1 normal, 2 black') TINYINT(1) index"`
+	Status              int    `json:"status" xorm:"notnull default(0) comment('0 un active, 1 normal, 2 black') TINYINT(1) index"`
 	GroupId             int64  `json:"group_id,omitempty" xorm:"bigint index"`
 	ResetCode           string `json:"reset_code,omitempty" xorm:"index"` // forget password code
 	ResetCodeExpired    int64  `json:"reset_code_expired,omitempty"`      // forget password code expired
 	LoginTime           int64  `json:"login_time,omitempty"`              // login time last time
 	LoginIp             string `json:"login_ip,omitempty"`                // login ip last time
 	Vip                 int    `json:"vip"`                               // only vip can op node and content
-	FollowedNum         int64  `json:"followed_num" xorm:"notnull"`
-	FollowingNum        int64  `json:"following_num" xorm:"notnull"`
+	FollowedNum         int64  `json:"followed_num" xorm:"notnull default(0)"`
+	FollowingNum        int64  `json:"following_num" xorm:"notnull default(0)"`
+	ContentNum          int64  `json:"content_num" xorm:"notnull default(0)"`      // normal publish content num
+	ContentCoolNum      int64  `json:"content_cool_num" xorm:"notnull default(0)"` // normal content cool num
 }
 
-var UserSortName = []string{"=id", "=name", "-vip", "-activate_time", "=followed_num", "=following_num", "=create_time", "=update_time", "=gender"}
+var UserSortName = []string{"=id", "=name", "-vip", "-activate_time", "=followed_num", "=following_num", "=content_num", "=content_cool_num", "=create_time", "=update_time", "=gender"}
 
 func (u *User) Get() (err error) {
 	var exist bool

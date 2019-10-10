@@ -755,6 +755,9 @@ func ListHomeComment(c *gin.Context) {
 				cs[k].Son = innerCs
 				for _, vv := range innerCs {
 					commentIds[vv.Id] = struct{}{}
+					if vv.CommentType >= model.CommentTypeOfComment && vv.CommentId != 0 {
+						commentIds[vv.CommentId] = struct{}{}
+					}
 				}
 			}
 

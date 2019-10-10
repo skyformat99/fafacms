@@ -719,6 +719,49 @@ func ListHomeComment(c *gin.Context) {
 		}
 	}
 
+	// in order to show:
+	// aaaaaa
+	// 	aaaa1
+	//  aaaa2
+	// bbbbbb
+	// cccccc
+	if req.RootCommentId == 0 {
+		for k, c := range cs {
+			innerSession := model.FaFaRdb.Client.NewSession()
+			innerSession.Where("root_comment_id=?", c.Id).And("is_delete=?", 0)
+			selectSession := innerSession.Clone()
+			num, err := innerSession.Count(new(model.Comment))
+			if err != nil {
+				flog.Log.Errorf("ListHomeComment err: %s", err.Error())
+				resp.Error = Error(DBError, err.Error())
+				innerSession.Close()
+				selectSession.Close()
+				return
+			}
+
+			if num > 0 {
+				innerCs := make([]model.Comment, 0)
+				cs[k].SonNum = num
+				Build(selectSession, req.Sort, model.CommentHomeSortName)
+				err = selectSession.Limit(3).Find(&innerCs)
+				if err != nil {
+					flog.Log.Errorf("ListHomeComment err: %s", err.Error())
+					resp.Error = Error(DBError, err.Error())
+					innerSession.Close()
+					selectSession.Close()
+					return
+				}
+
+				cs[k].Son = innerCs
+				for _, vv := range innerCs {
+					commentIds[vv.Id] = struct{}{}
+				}
+			}
+
+			innerSession.Close()
+			selectSession.Close()
+		}
+	}
 	backComments, backUsers, err := model.GetCommentAndCommentUser(util.MapToArray(commentIds), false, nil, yourUserId)
 	if err != nil {
 		flog.Log.Errorf("ListHomeComment err: %s", err.Error())

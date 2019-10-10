@@ -249,29 +249,31 @@ func GetUser(userIds []int64) (users map[int64]UserHelper, err error) {
 }
 
 type Comment struct {
-	Id                  int64  `json:"id" xorm:"bigint pk autoincr"`
-	UserId              int64  `json:"-" xorm:"bigint index"`
-	UserName            string `json:"-" xorm:"index"`
-	ContentId           int64  `json:"content_id" xorm:"bigint index"`
-	ContentTitle        string `json:"content_title"` // may be content delete so this field keep
-	ContentUserId       int64  `json:"-" xorm:"bigint index"`
-	ContentUserName     string `json:"-" xorm:"index"`
-	CommentId           int64  `json:"comment_id" xorm:"bigint index"`
-	CommentUserId       int64  `json:"-" xorm:"bigint index"`
-	CommentUserName     string `json:"-" xorm:"index"`
-	RootCommentId       int64  `json:"root_comment_id" xorm:"bigint index"`
-	RootCommentUserId   int64  `json:"-" xorm:"bigint index"`
-	RootCommentUserName string `json:"-" xorm:"index"`
-	Describe            string `json:"-" xorm:"TEXT"`
-	CreateTime          int64  `json:"-"`
-	Status              int    `json:"-" xorm:"notnull default(0) comment('0 normal, 1 ban') TINYINT(1) index"`
-	BanTime             int64  `json:"-"`
-	Cool                int64  `json:"-" xorm:"notnull default(0)"`
-	Bad                 int64  `json:"-" xorm:"notnull default(0)"`
-	CommentType         int    `json:"comment_type"` // 0 comment to content, 1 comment to comment, 2 comment to comment more
-	CommentAnonymous    int    `json:"-"`
-	IsDelete            int    `json:"-"`
-	DeleteTime          int64  `json:"-"`
+	Id                  int64     `json:"id" xorm:"bigint pk autoincr"`
+	UserId              int64     `json:"-" xorm:"bigint index"`
+	UserName            string    `json:"-" xorm:"index"`
+	ContentId           int64     `json:"content_id" xorm:"bigint index"`
+	ContentTitle        string    `json:"content_title"` // may be content delete so this field keep
+	ContentUserId       int64     `json:"-" xorm:"bigint index"`
+	ContentUserName     string    `json:"-" xorm:"index"`
+	CommentId           int64     `json:"comment_id" xorm:"bigint index"`
+	CommentUserId       int64     `json:"-" xorm:"bigint index"`
+	CommentUserName     string    `json:"-" xorm:"index"`
+	RootCommentId       int64     `json:"root_comment_id" xorm:"bigint index"`
+	RootCommentUserId   int64     `json:"-" xorm:"bigint index"`
+	RootCommentUserName string    `json:"-" xorm:"index"`
+	Describe            string    `json:"-" xorm:"TEXT"`
+	CreateTime          int64     `json:"-"`
+	Status              int       `json:"-" xorm:"notnull default(0) comment('0 normal, 1 ban') TINYINT(1) index"`
+	BanTime             int64     `json:"-"`
+	Cool                int64     `json:"-" xorm:"notnull default(0)"`
+	Bad                 int64     `json:"-" xorm:"notnull default(0)"`
+	CommentType         int       `json:"comment_type"` // 0 comment to content, 1 comment to comment, 2 comment to comment more
+	CommentAnonymous    int       `json:"-"`
+	IsDelete            int       `json:"-"`
+	DeleteTime          int64     `json:"-"`
+	Son                 []Comment `json:"son,omitempty" xorm:"-"`
+	SonNum              int64     `json:"son_num,omitempty" xorm:"-"`
 }
 
 var CommentSortName = []string{"=id", "-create_time", "=content_id", "=user_id", "=cool", "=bad"}

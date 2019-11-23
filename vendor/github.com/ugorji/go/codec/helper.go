@@ -582,34 +582,12 @@ type BasicHandle struct {
 // basicHandle returns an initialized BasicHandle from the Handle.
 func basicHandle(hh Handle) (x *BasicHandle) {
 	x = hh.getBasicHandle()
-	// ** We need to simulate once.Do, to ensure no data race within the block.
-	// ** Consequently, below would not work.
-	// if atomic.CompareAndSwapUint32(&x.inited, 0, 1) {
-	// 	x.be = hh.isBinary()
-	// 	_, x.js = hh.(*JsonHandle)
-	// 	x.n = hh.Name()[0]
-	// }
-
-	// simulate once.Do using our own stored flag and mutex as a CompareAndSwap
-	// is not sufficient, since a race condition can occur within init(Handle) function.
-	// init is made noinline, so that this function can be inlined by its caller.
-	if atomic.LoadUint32(&x.inited) == 0 {
-		x.init(hh)
-	}
-	return
-}
-
-//go:noinline
-func (x *BasicHandle) init(hh Handle) {
-	// make it uninlineable, as it is called at most once
-	x.mu.Lock()
-	if x.inited == 0 {
+	if atomic.CompareAndSwapUint32(&x.inited, 0, 1) {
 		x.be = hh.isBinary()
 		_, x.js = hh.(*JsonHandle)
 		x.n = hh.Name()[0]
-		atomic.StoreUint32(&x.inited, 1)
 	}
-	x.mu.Unlock()
+	return
 }
 
 func (x *BasicHandle) getBasicHandle() *BasicHandle {
@@ -2667,7 +2645,7 @@ func (z *sfiRvPooler) get(newlen int) (fkvs []sfiRv) {
 	return
 }
 
-// xdebugf printf. the message in red on the terminal.
+// xdebugf prints the message in red on the terminal.
 // Use it in place of fmt.Printf (which it calls internally)
 func xdebugf(pattern string, args ...interface{}) {
 	var delim string
@@ -2701,7 +2679,7 @@ func xdebugf(pattern string, args ...interface{}) {
 // 		return "UTC"
 // 	}
 // 	var tzname = []byte("UTC+00:00")
-// 	//tzname := fmt.Sprintf("UTC%s%02d:%02d", tzsign, tz/60, tz%60) //perf issue using Sprintf.. inline below.
+// 	//tzname := fmt.Sprintf("UTC%s%02d:%02d", tzsign, tz/60, tz%60) //perf issue using Sprintf. inline below.
 // 	//tzhr, tzmin := tz/60, tz%60 //faster if u convert to int first
 // 	var tzhr, tzmin int16
 // 	if tzint < 0 {
